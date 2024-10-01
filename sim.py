@@ -567,7 +567,7 @@ class Simulation:
         
         """
         self.F = - self.mass * omega ** 2 * self.R * np.array([1,0,0])
-        self.U = 1 / 2 * omega ** 2 * np.linalg.norm(self.mass * self.R[:,0] ** 2)
+        self.U = 1 / 2 * omega ** 2 * self.mass * np.sum(self.R[:,0] ** 2)
 
 
     def evalAnharm( self, Lambda ):
@@ -607,6 +607,23 @@ class Simulation:
         """
         self.F = - Lambda * self.R ** 3 * np.array([1,0,0])
         self.U = 0.25 * Lambda * self.R[0,0] ** 4
+
+    def evalring( self, omega2 ):
+        """
+        THIS FUNCTION EVALUATES THE POTENTIAL AND FORCE FOR FREE RING POLYMER WITH HARMONIC INTERACTIONS BETWEEN NEIGHBORS (one dimension).
+
+        Returns
+        -------
+        None. Adds to the value of self.F and self.U.
+
+        Tests
+        -----
+        for a ring of 3 atoms with omega2 = 1 and mass = 1:
+        1. CHECK THAT THE VALUE OF THE POTENTIAL AT THE MINIMUM IS 0.
+        2. for the possitions: [[0,0,0],[1,0,0],[2,0,0]] the potential energy should be 0.5
+        Example:
+
+        """
         
     def CalcKinE( self ):
         """
@@ -722,11 +739,10 @@ class Simulation:
 
         # previous energy and positions arrays
         U0 = np.copy(self.U) 
-        R0 = np.copy(self.R)
 
-        for atom in range(self.Natoms):
-            # R0 = np.copy(self.R)
-            # PROPOSE TRANSLATION MOVES
+        for atom in range(self.Natoms): # np.random.randint(0,self.Natoms , self.Natoms): # preform MC pass.
+            R0 = np.copy(self.R)
+            # PROPOSE TRANSLATION MOVE
             R1 = R0[atom] + np.random.uniform(-1,1, (1,3)) * self.drmax
 
             # apply PBC
@@ -775,7 +791,7 @@ class Simulation:
             if self.step % self.printfreq == 0:
                 self.dumpThermo()
                 self.dumpXYZ_pandas()
-            
+             
             self.MCstep(**kwargs)
         self.accept /=  self.Nsteps * self.Natoms
         self.evalForce(**kwargs)
