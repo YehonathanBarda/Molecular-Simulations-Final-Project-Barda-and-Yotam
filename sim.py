@@ -665,8 +665,7 @@ class Simulation:
         None. Set s the value of self.K.
 
         """
-        q_avg = np.mean(self.R, axis = 0)
-        self.K = 0.5 * np.mean(-self.F * (self.R - q_avg))
+        self.K = 0.5 * np.mean(-self.F * (self.R - np.mean(self.R, axis = 0)))
 
 
     def VVstep( self, **kwargs ):
