@@ -656,6 +656,19 @@ class Simulation:
         # self.K = np.sum(np.linalg.norm(self.p, axis = 1) ** 2 / (2 * self.mass))
 
 
+    def CalcKinE_PI( self ):
+        """
+        THIS FUNCTIONS EVALUATES THE KINETIC ENERGY OF THE RING POLYMER.
+
+        Returns
+        -------
+        None. Set s the value of self.K.
+
+        """
+        q_avg = np.mean(self.R, axis = 0)
+        self.K = 0.5 * np.mean(-self.F * (self.R - q_avg))
+
+
     def VVstep( self, **kwargs ):
         """
         THIS FUNCTIONS PERFORMS ONE VELOCITY VERLET STEP.
