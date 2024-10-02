@@ -10,7 +10,7 @@ Created on Sun Feb  6 11:55:59 2022
 WELCOME TO YOUR FIRST PROJECT! THIS BIT OF TEXT IS CALLED A DOCSTRING.
 BELOW, I HAVE CREATED A CLASS CALLED "SIMULATION" FOR YOUR CONVENIENCE.
 I HAVE ALSO IMPLEMENTED A CONSTRUCTOR, WHICH IS A METHOD THAT IS CALLED 
-EVERY TIME YOU CREATE AN OBJECT OF THE CLASS USING, FOR EXAMPLE, 
+EVERY TIME YOU CREATE AN OBJECT OF THE CLASS USING, FOR EXAMPLE,
     
     >>> mysim = Simulation( dt=0.1E-15, L=11.3E-10, ftype="LJ" )
 
@@ -19,7 +19,7 @@ BUT DO NOT EDIT THEM. THEY ARE: evalForce, dumpXYZ, dumpThermo and readXYZ.
 
 YOU DO NOT NEED TO EDIT THE CLASS ITSELF. 
 
-YOUR JOB IS TO IMPLEMENT THE LIST OF CLASS METHODS DEFINED BELOW WHERE YOU 
+YOUR JOB IS TO IMPLEMENT THE LIST OF CLASS METHODS DEFINED BELOW WHERE YOU
 WILL SEE THE FOLLOWING TEXT: 
 
         ################################################################
@@ -656,6 +656,18 @@ class Simulation:
         # self.K = np.sum(np.linalg.norm(self.p, axis = 1) ** 2 / (2 * self.mass))
 
 
+    def CalcKinE_PI( self ):
+        """
+        THIS FUNCTIONS EVALUATES THE KINETIC ENERGY OF THE RING POLYMER.
+
+        Returns
+        -------
+        None. Set s the value of self.K.
+
+        """
+        self.K = 0.5 * np.mean(-self.F * (self.R - np.mean(self.R, axis = 0)))
+
+
     def VVstep( self, **kwargs ):
         """
         THIS FUNCTIONS PERFORMS ONE VELOCITY VERLET STEP.
@@ -819,23 +831,18 @@ class Simulation:
 
         """      
         
+        self.CalcCjk()
         self.evalForce(**kwargs)
         for step in range(self.Nsteps):
             self.step = step
-
-            # self.VVstep(**kwargs)
-
-            self.CalcKinE()
+            self.CalcKinE_PI()
             self.E = self.K + self.U
 
             if self.step % self.printfreq == 0:
                 self.dumpThermo()
                 self.dumpXYZ_pandas() 
 
-            self.VVstep(**kwargs)
-
-            if self.PBC:
-                self.applyPBC()
+            self.PolyRingStep(**kwargs)
              
 
 if __name__ == "__main__":
