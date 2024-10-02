@@ -893,7 +893,7 @@ class Simulation:
             5. YOU WILL ALSO NEED TO PRINT THE COORDINATES AND ENERGIES EVERY 
         PRINTFREQ TIME STEPS TO THEIR RESPECTIVE FILES, xyzfile AND outfile.
 
-        Returns
+        Returns 
         -------
         None.
 
