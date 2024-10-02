@@ -47,6 +47,7 @@ import numpy as np
 import pandas as pd
 from scipy.constants import Boltzmann as BOLTZMANN
 import matplotlib.pyplot as plt
+from scipy.constants import hbar
 
 class Simulation:
     
@@ -190,6 +191,17 @@ class Simulation:
             self.ftype = "eval" + ftype
         else:
             raise ValueError("Wrong ftype value - use LJ or Harm or Anharm.")
+        
+        #Constant for 1-D ring polymer Path integral simulation:
+        self.Cjk = None
+        self.Ckj = None
+        self.omega_p = self.Natoms / (self.beta * hbar)
+        self.omega_k = 2 * self.omega_p * np.sin(np.pi * np.arange(0, self.Natoms) / self.Natoms)
+
+        self.dict = {'a':np.cos(self.omega_k * self.dt)[:, np.newaxis],\
+                'b':- (self.mass * self.omega_k * np.sin(self.omega_k * self.dt))[:, np.newaxis],\
+                    'c':((1 / self.mass * self.omega_k) * np.sin(self.omega_k * self.dt))[:, np.newaxis]}
+    
     
     def __del__( self ):
         """
@@ -549,9 +561,9 @@ class Simulation:
         TIMESTEP 0.1E-15,BOX SIDE LENGTH 11.3E-10, HARMONIC POTENTIAL, 
         OMEGA 1, MASS 1.6735575E-27
         
-        IMPLEMENT THE FOLLOWING TESTS BELOW THE WORD Example:
+        IMPLEMENT THE FOLLOWING TESTS BELOW THE WORD Example: 
         1. CHECK THAT THE VALUE OF THE POTENTIAL AT THE MINIMUM IS ZERO.
-        2. CHECK THAT THE VALUE OF THE POTENTIAL AT 5A IS 2.09194687e-46.
+        2. CHECK THAT THE VALUE OF THE POTENTIAL AT 5A IS 2.09194687e-46. 
 
         Example:
         >>> mysim = Simulation(dt=0.1E-15, L=11.3E-10, ftype="Harm", mass = 1.6735575E-27)
@@ -708,8 +720,64 @@ class Simulation:
         self.R += (self.p / self.mass) * self.dt
         self.evalForce(**kwargs)
         self.p += self.F * self.dt / 2
+
+
+    def CulcCjk(self):
+        """
+        This function calculates the Cjk matrix for the ring polymer.
+
+        Returns
+        -------
+        None. Sets self.Cjk, self.Ckj.
+        """
+        C = np.zeros((self.Natoms, self.Natoms))
+        for j in range(self.Natoms):
+            for k in range(self.Natoms):
+                if k == 0:
+                    C[j, k] = np.sqrt(1 / np.float(self.Natoms))
+                elif 1 <= k <= self.Natoms / 2 - 1:
+                    C[j, k] = np.sqrt(2 / np.float(self.Natoms)) * np.cos(2 * np.pi * (j+1) * k / np.float(self.Natoms))
+                elif k == self.Natoms / 2:
+                    C[j, k] = np.sqrt(1 / np.float(self.Natoms)) * (-1) ** (j+1)
+                elif self.Natoms / 2 + 1 <= k <= self.Natoms - 1:
+                    C[j, k] = np.sqrt(2 / np.float(self.Natoms)) * np.sin(2 * np.pi * (j+1) * k / np.float(self.Natoms))
+        self.Cjk = C
+        self.Ckj = np.transpose(C)
    
 
+    def PolyRingStep(self, **kwargs):
+        """
+        THIS FUNCTION PERFORMS ONE STEP FOR A RING POLYMER.
+
+        Returns
+        -------
+        None. Sets self.R, self.p.
+        """
+        
+        self.p += self.F * self.dt / 2
+
+        Rtild = np.dot(self.Cjk, self.R)
+        ptild = np.dot(self.Cjk, self.p)
+
+        # cos_omegak_dt = np.cos(self.omega_k * self.dt)
+        # sin_omegak_dt = np.sin(self.omega_k * self.dt)
+        # mass_omegak = self.mass * self.omega_k
+
+        # self.Rtild = cos_omegak_dt[:, np.newaxis] * self.Rtild - mass_omegak[:, np.newaxis] * sin_omegak_dt[:, np.newaxis] * self.ptild
+        # self.ptild = (1 / mass_omegak)[:, np.newaxis] * sin_omegak_dt[:, np.newaxis] * self.Rtild + cos_omegak_dt[:, np.newaxis] * self.ptild
+
+        Rtild = self.dict['a'] * Rtild + self.dict['b'] * ptild
+        ptild = self.dict['c'] * Rtild + self.dict['a'] * ptild
+
+        self.R = np.dot(self.Ckj, Rtild)
+        self.p = np.dot(self.Ckj, ptild)
+
+        self.evalForce(**kwargs)
+
+        self.p += self.F * self.dt / 2
+
+
+    
     def evalLJ_atom(self, R, atom, eps, sig):
         """
         THIS FUNCTION EVALUTES THE LENNARD-JONES POTENTIAL FOR A SINGLE ATOM.
