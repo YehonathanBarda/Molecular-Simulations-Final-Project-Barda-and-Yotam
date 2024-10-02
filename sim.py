@@ -722,7 +722,7 @@ class Simulation:
         self.p += self.F * self.dt / 2
 
 
-    def CulcCjk(self):
+    def CalcCjk(self):
         """
         This function calculates the Cjk matrix for the ring polymer.
 
