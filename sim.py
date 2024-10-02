@@ -579,7 +579,7 @@ class Simulation:
         
         """
         self.F = - self.mass * omega ** 2 * self.R * np.array([1,0,0])
-        self.U = 1 / 2 * omega ** 2 * self.mass * np.sum(self.R[:,0] ** 2)
+        self.U = 1 / 2 * omega ** 2 * self.mass * np.mean(self.R[:,0] ** 2)
 
 
     def evalAnharm( self, Lambda ):
