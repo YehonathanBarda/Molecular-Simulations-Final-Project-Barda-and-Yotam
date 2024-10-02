@@ -831,23 +831,18 @@ class Simulation:
 
         """      
         
+        self.CalcCjk()
         self.evalForce(**kwargs)
         for step in range(self.Nsteps):
             self.step = step
-
-            # self.VVstep(**kwargs)
-
-            self.CalcKinE()
+            self.CalcKinE_PI()
             self.E = self.K + self.U
 
             if self.step % self.printfreq == 0:
                 self.dumpThermo()
                 self.dumpXYZ_pandas() 
 
-            self.VVstep(**kwargs)
-
-            if self.PBC:
-                self.applyPBC()
+            self.PolyRingStep(**kwargs)
              
 
 if __name__ == "__main__":
