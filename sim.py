@@ -51,10 +51,10 @@ from scipy.constants import hbar
 
 class Simulation:
     
-    def __init__( self, dt, L, Nsteps=0, R=None, mass=None, kind=None, \
+    def __init__( self, dt, L = 11.3E-10, Nsteps=0, R=None, mass=None, kind=None, \
                  p=None, F=None, U=None, K=None, seed=937142, ftype=None, \
                  step=0, printfreq=1000, xyzname="sim.xyz", fac=1.0, \
-                 outname="sim.log", debug=False, PBC=False, drmax = None, Temp = 273.15 ):
+                 outname="sim.log", debug=False, PBC=False, drmax = None, beta = 273.15 ):
         """
         THIS IS THE CONSTRUCTOR. SEE DETAILED DESCRIPTION OF DATA MEMBERS
         BELOW. THE DESCRIPTION OF EACH METHOD IS GIVEN IN ITS DOCSTRING.
@@ -149,7 +149,7 @@ class Simulation:
         self.fac = fac
         self.PBC = PBC  ## Mine
         self.drmax = drmax
-        self.beta = 1 / (Temp * BOLTZMANN)
+        self.beta = beta
         self.accept = 0
 
         
@@ -309,11 +309,11 @@ class Simulation:
                               self.kind[i] + " " + \
                               str(i) + " " + \
                               "{:.6e}".format( self.R[i,0]*self.fac ) + " " + \
-                              "{:.6e}".format( self.R[i,1]*self.fac ) + " " + \
-                              "{:.6e}".format( self.R[i,2]*self.fac ) + " " + \
+                              "{:.6e}".format( 0 ) + " " + \
+                              "{:.6e}".format( 0 ) + " " + \
                               "{:.6e}".format( self.p[i,0]*self.fac ) + " " + \
-                              "{:.6e}".format( self.p[i,1]*self.fac ) + " " + \
-                              "{:.6e}".format( self.p[i,2]*self.fac ) + "\n" )
+                              "{:.6e}".format( 0 ) + " " + \
+                              "{:.6e}".format( 0 ) + "\n" )
     
 
     
@@ -579,7 +579,10 @@ class Simulation:
         
         """
         self.F = - self.mass * omega ** 2 * self.R * np.array([1,0,0])
-        self.U = 1 / 2 * omega ** 2 * self.mass * np.mean(self.R[:,0] ** 2)
+        self.U = 1 / 2 * omega ** 2 * self.mass * np.mean(self.R[:,0] ** 2, axis = 0)
+        # print(f'step: {self.step}\nforce:\n{self.F}')
+
+
 
 
     def evalAnharm( self, Lambda ):
@@ -759,15 +762,15 @@ class Simulation:
         Rtild = np.dot(self.Cjk, self.R)
         ptild = np.dot(self.Cjk, self.p)
 
-        # cos_omegak_dt = np.cos(self.omega_k * self.dt)
-        # sin_omegak_dt = np.sin(self.omega_k * self.dt)
-        # mass_omegak = self.mass * self.omega_k
+        cos_omegak_dt = np.cos(self.omega_k * self.dt)
+        sin_omegak_dt = np.sin(self.omega_k * self.dt)
+        mass_omegak = self.mass * self.omega_k
 
-        # self.Rtild = cos_omegak_dt[:, np.newaxis] * self.Rtild - mass_omegak[:, np.newaxis] * sin_omegak_dt[:, np.newaxis] * self.ptild
-        # self.ptild = (1 / mass_omegak)[:, np.newaxis] * sin_omegak_dt[:, np.newaxis] * self.Rtild + cos_omegak_dt[:, np.newaxis] * self.ptild
+        Rtild = cos_omegak_dt[:, np.newaxis] * Rtild - mass_omegak[:, np.newaxis] * sin_omegak_dt[:, np.newaxis] * ptild
+        ptild = (1 / mass_omegak)[:, np.newaxis] * sin_omegak_dt[:, np.newaxis] * Rtild + cos_omegak_dt[:, np.newaxis] * ptild
 
-        Rtild = self.dict['a'] * Rtild + self.dict['b'] * ptild
-        ptild = self.dict['c'] * Rtild + self.dict['a'] * ptild
+        # Rtild = self.dict['a'] * Rtild + self.dict['b'] * ptild
+        # ptild = self.dict['c'] * Rtild + self.dict['a'] * ptild
 
         self.R = np.dot(self.Ckj, Rtild)
         self.p = np.dot(self.Ckj, ptild)
@@ -775,6 +778,9 @@ class Simulation:
         self.evalForce(**kwargs)
 
         self.p += self.F * self.dt / 2
+
+        print(f'step: {self.step}\nR:\n{self.R}')
+
 
 
     
