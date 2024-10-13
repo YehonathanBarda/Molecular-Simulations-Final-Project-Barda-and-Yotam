@@ -15,7 +15,7 @@ from scipy.constants import hbar
 
 
 '''
-PART A:
+PART A: 
 '''
 
 def run_part_A(trap_omega, Nbids = 3):
