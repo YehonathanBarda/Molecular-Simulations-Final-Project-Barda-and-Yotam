@@ -404,144 +404,8 @@ class Simulation:
         if removeCM:
             self.p = self.p - np.mean(self.p, axis=0)
 
-    
-    def applyPBC( self ):
-        """
-        THIS FUNCTION APPLIES PERIODIC BOUNDARY CONDITIONS.
 
-        Returns
-        -------
-        None. Sets the value of self.R.
-
-        Tests
-        -----
-        CREATE AN OBJECT OF THE SIMULATION CLASS WITH FOLLOWING PARAMS:
-        TIMESTEP 0.1E-15,BOX SIDE LENGTH 11.3E-10, LJ POTENTIAL,
-        MASS 1.6735575E-27
-        
-        IMPLEMENT THE FOLLOWING TESTS BELOW THE WORD Example:
-        1. A PARTICLE WITH X > L/2
-        2. A PARTICLE WITH X < -L/2
-        3. REPEAT 1 AND 2 FOR Y AND Z.
-
-        Example:
-        >>> mysim = Simulation(dt=0.1E-15, L=11.3E-10, ftype="LJ", mass = np.array([1.6735575E-27]*6))
-        >>> mysim.R = np.array([[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]]) * mysim.L
-        >>> mysim.applyPBC()
-        >>> np.all(np.abs(mysim.R) < 1E-20)
-        True
-        """
-        self.R[self.R > self.L / 2] -= self.L
-        self.R[self.R < - self.L / 2] += self.L
-        # is_over = self.R > (self.L / 2)
-        # is_under = self.R < -(self.L / 2)
-        # self.R += (is_under.astype(int) - is_over.astype(int)) * self.L
-
-                    
-    def removeRCM( self ):
-        """
-        THIS FUNCTION ZEROES THE CENTERS OF MASS POSITION VECTOR.
-
-        Returns
-        -------
-        None. Sets the value of self.R.
-
-
-        Tests
-        -----
-        CREATE AN OBJECT OF THE SIMULATION CLASS WITH FOLLOWING PARAMS:
-        TIMESTEP 0.1E-15,BOX SIDE LENGTH 11.3E-10, LJ POTENTIAL
-        MASS 1.6735575E-27
-        
-        IMPLEMENT THE FOLLOWING TESTS BELOW THE WORD Example:
-        1. CREATE THREE PARTICLES WITH THE SAME MASS AND A NON-ZERO RCM, REMOVE IT.
-        2. REPEAT FOR THREE PARTICLES WITH DIFFERENT MASSES: 1M, 2M, 3M.
-
-        Example:
-        >>> mysim = Simulation(dt=0.1E-15, L=11.3E-10, ftype="LJ")
-        >>> mysim.R = np.array([[0.3,-0.2,0.4],[0.7,-0.2,-0.1],[0.4,0.2,0]]) * mysim.L
-        >>> mysim.mass =  np.array([[1],[1],[1]]) * 1.6735575E-27
-        >>> mysim.removeRCM()
-        >>> np.all(np.abs(np.sum(mysim.R * mysim.mass, axis = 0) / np.sum(mysim.mass)) < 1E-22)
-        True
-        >>> mysim.R = 1.6735575E-27
-        >>> mysim.mass = np.array([[0.4],[3],[1]]) * 1.6735575E-27
-        >>> mysim.removeRCM()
-        >>> np.all(np.abs(np.sum(mysim.R * mysim.mass, axis = 0) / np.sum(mysim.mass)) < 1E-22)
-        True
-
-        """   
-
-        self.R = self.R - np.sum(self.R * self.mass, axis = 0) / np.sum(self.mass)
-
-
-                
-             
-    def evalLJ( self, eps, sig ):
-        """
-        THIS FUNCTION EVALUTES THE LENNARD-JONES POTENTIAL AND FORCE.
-
-        Parameters
-        ----------
-        eps : float
-            epsilon LJ parameter.
-        sig : float
-            sigma LJ parameter.
-
-        Returns
-        -------
-        None. Sets the value of self.F and self.U.
-
-        Tests
-        -----
-        CREATE AN OBJECT OF THE SIMULATION CLASS WITH FOLLOWING PARAMS:
-        TIMESTEP 0.1E-15,BOX SIDE LENGTH 11.3E-10, LJ POTENTIAL
-        EPSILON 1, SIMGA 1, MASS 1.6735575E-27
-        
-        IMPLEMENT THE FOLLOWING TESTS BELOW THE WORD Example:
-        1. CHECK THAT THE VALUE OF THE POTENTIAL AT THE MINIMUM IS -EPSILON.
-        2. CHECK THAT THE VALUE OF THE POTENTIAL AT SIGMA IS ZERO
-
-        Example:
-        >>> eps = 1
-        >>> sig = 1
-        >>> pos_min = np.array([[0,0,0], [2 ** (1/6) * sig,0,0]])
-        >>> mysim = Simulation(dt=0.1E-15, L=11.3E-10, ftype="LJ", R = pos_min, PBC = False)
-        >>> mysim.mass = np.ones((mysim.Natoms, 1)) * 1.6735575E-27
-        >>> mysim.evalLJ(eps,sig)
-        >>> abs(mysim.U + eps) < 1E-20
-        True
-        >>> mysim.Natoms = 3 # testing the function with 3 atoms, the third atom is far so it doesn't really effect F and U 
-        >>> mysim.mass = np.ones((mysim.Natoms, 1)) * 1.6735575E-27
-        >>> mysim.R = np.array([[0,0,0], [sig,0,0],[0,0,30000.0]])  
-        >>> mysim.evalLJ(eps,sig)
-        >>> abs(mysim.U) < 1E-20
-        True
-        """
-        
-        self.U = 0
-        r_ij2 = np.zeros((self.Natoms, self.Natoms - 1, 3)) # array for force evaluation 
-
-        for i in range(self.Natoms):
-            r_ij2[i] = self.R[i] - np.delete(self.R, i, axis=0)
-
-            if i == self.Natoms - 1:
-                break
-
-            r_ij1 = ( self.R[i] - self.R[i+1:]) # array for energy evaluation 
-            if self.PBC:
-                r_ij1[r_ij1 > self.L / 2] -= self.L # energy PBC
-                r_ij1[r_ij1 < - self.L / 2] += self.L # energy PBC
-
-            norm_ij1 = np.linalg.norm(r_ij1, axis = 1) # enrgy norm
-            self.U += 4 * eps * np.sum((sig / norm_ij1) ** 12 - (sig / norm_ij1) ** 6)
-        if self.PBC:
-            r_ij2[(r_ij2 > self.L / 2)] -= self.L  # force PBC
-            r_ij2[(r_ij2 < - self.L / 2)] += self.L # force PBC
-        norm_ij2 = np.repeat(np.linalg.norm(r_ij2, axis = 2)[:,:,np.newaxis] , 3 , axis=2) # force norm
-        self.F = 4 * eps * np.sum((12 * sig ** 12 / norm_ij2 ** 14 - 6 * sig ** 6 / norm_ij2 ** 8) * r_ij2, axis = 1)
-
-            
+                                
     def evalHarm( self, omega ):
         """
         THIS FUNCTION EVALUATES THE POTENTIAL AND FORCE FOR A HARMONIC TRAP.
@@ -583,62 +447,6 @@ class Simulation:
         # print(f'step: {self.step}\nforce:\n{self.F}')
 
 
-
-
-    def evalAnharm( self, Lambda ):
-        """
-        THIS FUNCTION EVALUATES THE POTENTIAL AND FORCE FOR AN ANHARMONIC TRAP.
-
-        Parameters
-        ----------
-        Lambda : float
-            The parameter of the trap U = 0.25 * Lambda * x**4
-
-        Returns
-        -------
-        None. Sets the value of self.F and self.U.
-
-        Tests
-        -----
-        CREATE AN OBJECT OF THE SIMULATION CLASS WITH FOLLOWING PARAMS:
-        TIMESTEP 0.1E-15,BOX SIDE LENGTH 11.3E-10, ANHARMONIC POTENTIAL, 
-        LAMBDA 1, MASS 1.6735575E-27
-        
-        IMPLEMENT THE FOLLOWING TESTS BELOW THE WORD Example:
-        1. CHECK THAT THE VALUE OF THE POTENTIAL AT THE MINIMUM IS ZERO.
-        2. CHECK THAT THE VALUE OF THE POTENTIAL AT 5A IS 1.5625E-38
-
-        Example:
-        >>> mysim = Simulation(dt=0.1E-15, L=11.3E-10, ftype="Anharm", mass = 1.6735575E-27)
-        >>> mysim.mass = np.array([[1.6735575E-27]])
-        >>> mysim.R = np.array([[0,0,0]])
-        >>> mysim.evalAnharm(Lambda = 1)
-        >>> abs(mysim.U) < 1E-20
-        True
-        >>> mysim.R = np.array([[5E-10,0,0]])
-        >>> mysim.evalAnharm(Lambda = 1)
-        >>> abs(mysim.U-1.5625E-38) < 1E-50
-        True
-        """
-        self.F = - Lambda * self.R ** 3 * np.array([1,0,0])
-        self.U = 0.25 * Lambda * self.R[0,0] ** 4
-
-    def evalring( self, omega2 ):
-        """
-        THIS FUNCTION EVALUATES THE POTENTIAL AND FORCE FOR FREE RING POLYMER WITH HARMONIC INTERACTIONS BETWEEN NEIGHBORS (one dimension).
-
-        Returns
-        -------
-        None. Adds to the value of self.F and self.U.
-
-        Tests
-        -----
-        for a ring of 3 atoms with omega2 = 1 and mass = 1:
-        1. CHECK THAT THE VALUE OF THE POTENTIAL AT THE MINIMUM IS 0.
-        2. for the possitions: [[0,0,0],[1,0,0],[2,0,0]] the potential energy should be 0.5
-        Example:
-
-        """
         
     def CalcKinE( self ):
         """
@@ -683,46 +491,6 @@ class Simulation:
         self.K = 1/(2*self.beta) + 1/(2*self.beta) + 0.5 * np.mean(-self.F * (self.R - np.mean(self.R, axis = 0)))
 
 
-    def VVstep( self, **kwargs ):
-        """
-        THIS FUNCTIONS PERFORMS ONE VELOCITY VERLET STEP.
-
-        Returns
-        -------
-        None. Sets self.R, self.p.
-
-        Tests
-        -----
-        CREATE AN OBJECT OF THE SIMULATION CLASS WITH FOLLOWING PARAMS:
-        TIMESTEP 0.1E-15, BOX SIDE LENGTH 11.3E-10, LJ POTENTIAL, 
-        MOMENTUM 1 (ALL DIRECTIONS), KINETIC ENERGY 0.5, 
-        ATOM 1 POSITION (0,0,0), ATOM 2 POSITION (1,1,1)
-        FORCE 2E15, POTENTIAL 0.5, MASS 1E-15 (BOTH ATOMS),
-        EPSILON 0.5, SIMGA 0.5
-        
-        IMPLEMENT THE FOLLOWING TESTS BELOW THE WORD Example:
-        1. CHECK THAT AFTER ONE VVSTEP THE POSITIONS OF THE ATOMS ARE UPDATED BY 0.11.
-        2. CHECK THAT AFTER ONE VVSTEP THE MOMENTUMS OF THE ATOMS ARE 1.1 (ALL DIRECTIONS).
-
-        Example:
-        >>> mysim = Simulation(dt=0.1E-15, L=11.3E-10, ftype="LJ", R = np.array([[0,0,0],[1,1,1]]).astype(float))
-        >>> mysim.mass = np.ones((mysim.Natoms,1))*1E-15
-        >>> mysim.p = np.ones((mysim.Natoms, 3)).astype(float)
-        >>> mysim.K = 0.5
-        >>> mysim.F = np.ones((mysim.Natoms, 3)) * 2E15
-        >>> mysim.U = 0.5
-        >>> params = {'eps': 0.5, 'sig': 0.5}
-        >>> mysim.VVstep(**params)
-        >>> np.all(np.abs(mysim.R - np.array([[0,0,0],[1,1,1]]).astype(float) - 0.11) < 1E-15)
-        True
-        >>> np.all(np.abs(mysim.p - 1.1) < 1E-20)
-        True
-        """
-
-        self.p += self.F * self.dt / 2
-        self.R += (self.p / self.mass) * self.dt
-        self.evalForce(**kwargs)
-        self.p += self.F * self.dt / 2
 
 
     def CalcCjk(self):
@@ -787,22 +555,6 @@ class Simulation:
 
 
 
-    
-    def evalLJ_atom(self, R, atom, eps, sig):
-        """
-        THIS FUNCTION EVALUTES THE LENNARD-JONES POTENTIAL FOR A SINGLE ATOM.
-        
-        Returns
-        -------
-        float. The value of the potential energy for a single atom.
-        """
-
-        r_ij = R[atom] - np.delete(R,atom, axis=0) # array for energy evaluation 
-        if self.PBC:
-            r_ij[r_ij > self.L / 2] -= self.L # energy PBC
-            r_ij[r_ij < - self.L / 2] += self.L # energy PBC
-        norm_ij = np.linalg.norm(r_ij, axis = 1) # enrgy norm
-        return 4 * eps * np.sum((sig / norm_ij) ** 12 - (sig / norm_ij) ** 6)
 
 
   
