@@ -53,7 +53,7 @@ IT WILL TAKE CARE AUTOMATICALLY, TO CALL THE WRITE METHOD BASED ON mysim.ftype.
 PART A:
 '''
 dt_list = np.arange(1,2) * 1E-16
-if False:
+if True:
     Initial_pos_A = np.array([[1,0,0]]) * 5E-10  # 5 Angstrom
     Initial_mom_A = np.zeros((1,3))
     trap_omega = 50 * 1.602176634E-22 / hbar # from meV to J
@@ -70,7 +70,7 @@ if False:
 '''
 PART B
 '''
-if True:
+if False:
     dt = 10E-15
     mysim = Simulation( dt = dt, L = 22.6E-10, ftype="LJ", xyzname = 'PartB T=40.pd' , \
                        outname='PartB T=40.erg', Nsteps=10000, printfreq=100, K=0, kind=['Ar'] * 256,\
