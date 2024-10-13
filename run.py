@@ -20,8 +20,8 @@ PART A:
 
 def run_part_A(trap_omega, Nbids = 3):
     beta_list = np.array([1]) / (hbar * trap_omega)
-    Initial_pos_A = np.array([[i] for i in range(Nbids)]) * 1E-10
-    Initial_mom_A = np.zeros((Nbids, 3))
+    Initial_pos_A = np.random.uniform(-1, 1, size=(1, Nbids)) * 1E-10
+    Initial_mom_A = np.random.normal(0, 1, size=(1, Nbids)) * 1E-24
     params = {'omega': trap_omega}
     dt = 0.1E-15
     for beta in beta_list:
