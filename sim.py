@@ -198,9 +198,9 @@ class Simulation:
         self.omega_p = self.Natoms / (self.beta * hbar)
         self.omega_k = 2 * self.omega_p * np.sin(np.pi * np.arange(0, self.Natoms) / self.Natoms)
 
-        self.dict = {'a':np.cos(self.omega_k * self.dt)[:, np.newaxis],\
-                'b':- (self.mass * self.omega_k * np.sin(self.omega_k * self.dt))[:, np.newaxis],\
-                    'c':((1 / self.mass * self.omega_k) * np.sin(self.omega_k * self.dt))[:, np.newaxis]}
+        self.dict = {'cos':np.cos(self.omega_k * self.dt)[:, np.newaxis],\
+                '-sin':- (self.mass * self.omega_k * np.sin(self.omega_k * self.dt))[:, np.newaxis],\
+                    '1/sin':((1 / self.mass * self.omega_k) * np.sin(self.omega_k * self.dt))[:, np.newaxis]}
     
     
     def __del__( self ):
@@ -748,7 +748,7 @@ class Simulation:
         self.Ckj = np.transpose(C)
    
 
-    def PolyRingStep(self, **kwargs):
+    def PolyRingStep(self, gamma, **kwargs):
         """
         THIS FUNCTION PERFORMS ONE STEP FOR A RING POLYMER.
 
@@ -757,20 +757,22 @@ class Simulation:
         None. Sets self.R, self.p.
         """
         
+        self.p = np.exp(- gamma * self.dt / 2) * self.p + np.sqrt( (self.mass / self.beta) * (1 - np.exp(- gamma * self.dt))) * np.random.randn() # Langevin part
+
         self.p += self.F * self.dt / 2
 
         Rtild = np.dot(self.Cjk, self.R)
         ptild = np.dot(self.Cjk, self.p)
 
-        cos_omegak_dt = np.cos(self.omega_k * self.dt)
-        sin_omegak_dt = np.sin(self.omega_k * self.dt)
-        mass_omegak = self.mass * self.omega_k
+        # cos_omegak_dt = np.cos(self.omega_k * self.dt)
+        # sin_omegak_dt = np.sin(self.omega_k * self.dt)
+        # mass_omegak = self.mass * self.omega_k
 
-        Rtild = cos_omegak_dt[:, np.newaxis] * Rtild - mass_omegak[:, np.newaxis] * sin_omegak_dt[:, np.newaxis] * ptild
-        ptild = (1 / mass_omegak)[:, np.newaxis] * sin_omegak_dt[:, np.newaxis] * Rtild + cos_omegak_dt[:, np.newaxis] * ptild
+        # Rtild = cos_omegak_dt[:, np.newaxis] * Rtild - mass_omegak[:, np.newaxis] * sin_omegak_dt[:, np.newaxis] * ptild
+        # ptild = (1 / mass_omegak)[:, np.newaxis] * sin_omegak_dt[:, np.newaxis] * Rtild + cos_omegak_dt[:, np.newaxis] * ptild
 
-        # Rtild = self.dict['a'] * Rtild + self.dict['b'] * ptild
-        # ptild = self.dict['c'] * Rtild + self.dict['a'] * ptild
+        ptild = self.dict['cos'] * ptild + self.dict['-sin'] * Rtild
+        Rtild = self.dict['1/sin'] * ptild + self.dict['cos'] * Rtild
 
         self.R = np.dot(self.Ckj, Rtild)
         self.p = np.dot(self.Ckj, ptild)
@@ -779,7 +781,9 @@ class Simulation:
 
         self.p += self.F * self.dt / 2
 
-        print(f'step: {self.step}\nR:\n{self.R}')
+        self.p = np.exp(- gamma * self.dt / 2) * self.p + np.sqrt( (self.mass / self.beta) * (1 - np.exp(- gamma * self.dt))) * np.random.randn() # Langevin part
+        
+        # print(f'step: {self.step}\nR:\n{self.R}')
 
 
 
