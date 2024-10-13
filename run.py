@@ -18,6 +18,7 @@ from scipy.constants import hbar
 PART A: 
 '''
 
+
 def run_part_A(trap_omega, Nbids = 3):
     beta_list = np.array([1]) / (hbar * trap_omega)
     Initial_pos_A = np.random.uniform(-1, 1, size=(1, Nbids)) * 1E-10
@@ -36,6 +37,7 @@ def run_part_A(trap_omega, Nbids = 3):
 '''
 PART B
 '''
+
 def run_part_B(trap_omega):
     dt = 10E-15
     mysim = Simulation( dt = dt, L = 22.6E-10, ftype="LJ", xyzname = 'PartB T=40.pd' , \
