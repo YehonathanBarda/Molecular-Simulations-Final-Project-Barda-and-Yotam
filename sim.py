@@ -166,7 +166,10 @@ class Simulation:
             self.kind = ["H"]
             self.Natoms = self.R.shape[0]
             self.mass_matrix = np.array( [self.mass,]*3 ).transpose()
-            
+
+        if self.Natoms%2 != 0:
+            raise ValueError("Number of atoms must be even.")
+        
         if p is not None:
             self.p = p
             self.K = K
@@ -197,15 +200,17 @@ class Simulation:
         self.Ckj = None
         self.omega_p = self.Natoms / (self.beta * hbar)
         self.omega_k = 2 * self.omega_p * np.sin(np.pi * np.arange(0, self.Natoms) / self.Natoms)
+        self.omega_k[0] = 1
 
         self.dict = {'cos':np.cos(self.omega_k * self.dt)[:, np.newaxis],\
                 '-sin':- (self.mass * self.omega_k * np.sin(self.omega_k * self.dt))[:, np.newaxis],\
                     '1/sin':((1 / self.mass * self.omega_k) * np.sin(self.omega_k * self.dt))[:, np.newaxis]}
+        
     
     
     def __del__( self ):
         """
-        THIS IS THE DESCTRUCTOR. NOT USUALLY NEEDED IN PYTHON. 
+        THIS IS THE DESTRUCTOR. NOT USUALLY NEEDED IN PYTHON. 
         JUST HERE TO CLOSE THE FILES.
 
         Returns
@@ -302,18 +307,15 @@ class Simulation:
 
         """
         if( self.step == 0 ):
-            self.xyzfile.write( "step kind atom_num x y z px py pz\n")
+            self.xyzfile.write( "step kind bead_num x p\n")
         
         for i in range( self.Natoms ):
             self.xyzfile.write( str(self.step) + " " + \
                               self.kind[i] + " " + \
                               str(i) + " " + \
                               "{:.6e}".format( self.R[i,0]*self.fac ) + " " + \
-                              "{:.6e}".format( 0 ) + " " + \
-                              "{:.6e}".format( 0 ) + " " + \
-                              "{:.6e}".format( self.p[i,0]*self.fac ) + " " + \
-                              "{:.6e}".format( 0 ) + " " + \
-                              "{:.6e}".format( 0 ) + "\n" )
+
+                              "{:.6e}".format( self.p[i,0]*self.fac ) + "\n" )
     
 
     
@@ -406,7 +408,7 @@ class Simulation:
 
 
                                 
-    def evalHarm( self, omega ):
+    def evalHarm( self, omega , gamma =0):
         """
         THIS FUNCTION EVALUATES THE POTENTIAL AND FORCE FOR A HARMONIC TRAP.
 
@@ -442,8 +444,8 @@ class Simulation:
         True
         
         """
-        self.F = - self.mass * omega ** 2 * self.R * np.array([1,0,0])
-        self.U = 1 / 2 * omega ** 2 * self.mass * np.mean(self.R[:,0] ** 2, axis = 0)
+        self.F = - self.mass * omega ** 2 * self.R
+        self.U = 1 / 2 * omega ** 2 * self.mass * np.mean(self.R ** 2)
         # print(f'step: {self.step}\nforce:\n{self.F}')
 
 
@@ -475,7 +477,7 @@ class Simulation:
         >>> abs(mysim.K - 8.96294271e+26) < 4E17
         True
         """
-        self.K = np.sum(np.sum( self.p**2, axis = 1) / (2 * self.mass[0,0])  )
+        self.K = np.sum(np.sum( self.p**2, axis = 1) / (2 * self.mass[0,0]))
         # self.K = np.sum(np.linalg.norm(self.p, axis = 1) ** 2 / (2 * self.mass))
 
 
@@ -506,12 +508,14 @@ class Simulation:
             for k in range(self.Natoms):
                 if k == 0:
                     C[j, k] = np.sqrt(1 / np.float(self.Natoms))
-                elif 1 <= k <= self.Natoms / 2 - 1:
+                elif 1 <= k and k <= self.Natoms / 2 - 1:
                     C[j, k] = np.sqrt(2 / np.float(self.Natoms)) * np.cos(2 * np.pi * (j+1) * k / np.float(self.Natoms))
                 elif k == self.Natoms / 2:
                     C[j, k] = np.sqrt(1 / np.float(self.Natoms)) * (-1) ** (j+1)
-                elif self.Natoms / 2 + 1 <= k <= self.Natoms - 1:
+                elif self.Natoms / 2 + 1 <= k and k <= self.Natoms - 1:
                     C[j, k] = np.sqrt(2 / np.float(self.Natoms)) * np.sin(2 * np.pi * (j+1) * k / np.float(self.Natoms))
+                else:
+                    raise ValueError('k out of bounds')
         self.Cjk = C
         self.Ckj = np.transpose(C)
    

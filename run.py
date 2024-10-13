@@ -19,18 +19,21 @@ PART A:
 '''
 
 
-def run_part_A(trap_omega, Nbids = 3):
+def run_part_A(trap_omega, Nbids = 4):
     beta_list = np.array([1]) / (hbar * trap_omega)
-    Initial_pos_A = np.random.uniform(-1, 1, size=(1, Nbids)) * 1E-10
-    Initial_mom_A = np.random.normal(0, 1, size=(1, Nbids)) * 1E-24
-    params = {'omega': trap_omega}
+    Initial_pos_A = np.random.uniform(-5, 5, size=(Nbids, 1)) * 1E-10
+    Initial_mom_A = np.random.normal(0, 1, size=(Nbids, 1)) * 1E-24
+    # Initial_pos_A = np.array([[-1], [0], [1]]) * 1E-1
+    # Initial_mom_A = np.array([[-1], [0], [1]]) * 1E-24
+    params = {'omega': trap_omega, 'gamma': 0.1}
     dt = 0.1E-15
+    
     for beta in beta_list:
         xyz_file = "A beta = {:.1e} bids = {:}".format(beta, Nbids) + '.xyz'
         energy_file = "A beta = {:.1e} bids = {:}".format(beta, Nbids) + '.erg'
         mysim = Simulation( dt=dt, ftype="Harm",  xyzname = xyz_file, \
                            outname= energy_file ,R = Initial_pos_A, p = Initial_mom_A,\
-                              Nsteps=10000,printfreq=10, K = 0, mass = 6.6335209E-26, kind = ['Ar'] * Nbids)
+                              Nsteps=10000,printfreq=1, K = 0, mass = 6.6335209E-26, kind = ['Ar'] * Nbids)
         mysim.run(**params)
 
 
@@ -57,4 +60,4 @@ if __name__ == "__main__":
     # Constants
     trap_omega = 50 * 1.602176634E-22 / hbar # from meV to J
 
-    run_part_A(trap_omega, Nbids=3)
+    run_part_A(trap_omega, Nbids = 4)
