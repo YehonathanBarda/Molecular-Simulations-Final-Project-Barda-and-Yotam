@@ -21,20 +21,16 @@ PART A:
 
 def run_part_A(trap_omega, Nbids):
     beta_list = np.array([6]) / (hbar * trap_omega)
-    
-    Initial_pos_A = np.random.uniform(-1, 1, size=(Nbids, 1)) * 1E-10
-    # Initial_mom_A = np.random.uniform(-1, 1, size=(Nbids, 1)) * 1E-24
-    # Initial_pos_A = np.array([[-1], [0], [1]]) * 1E-1
-    Initial_mom_A = np.zeros((Nbids, 1))
-    # print(Initial_pos_A)
-    # print(Initial_mom_A)
-
     params = {'omega': trap_omega}
     dt = 0.1E-15
     
+    Initial_pos_A = np.random.uniform(-1, 1, size=(Nbids, 1)) * 1E-10
+    Initial_mom_A = np.zeros((Nbids, 1))
+
+
     for beta in beta_list:
-        xyz_file = "A beta = {:.1e} bids = {:}".format(beta, Nbids) + '.xyz'
-        energy_file = "A beta = {:.1e} bids = {:}".format(beta, Nbids) + '.erg'
+        xyz_file = "results\A beta = {:.1e} bids = {:}".format(beta, Nbids) + '.xyz'
+        energy_file = "results\A beta = {:.1e} bids = {:}".format(beta, Nbids) + '.erg'
         mysim = Simulation( dt=dt, ftype="Harm",  xyzname = xyz_file, \
                            outname= energy_file ,R = Initial_pos_A, p = Initial_mom_A,\
                               Nsteps=10000,printfreq=1, K = 0, mass = 6.6335209E-26, kind = ['Ar'] * Nbids, beta=beta)
@@ -42,21 +38,46 @@ def run_part_A(trap_omega, Nbids):
 
 
 '''
-PART B
+PART B - Beads
 '''
 
-def run_part_B(trap_omega):
-    dt = 10E-15
-    mysim = Simulation( dt = dt, L = 22.6E-10, ftype="LJ", xyzname = 'PartB T=40.pd' , \
-                       outname='PartB T=40.erg', Nsteps=10000, printfreq=100, K=0, kind=['Ar'] * 256,\
-                       R = np.zeros((256,3)), mass =6.6335209E-26,   PBC=True)
-    mysim.readXYZ('Ar_init_super.xyz')
-    mysim.R *= 1E-10
-    mysim.mass = np.ones((256,1)) * 6.6335209E-26
-    mysim.sampleMB(40)
-    params = {'eps': 1.656778224E-21, 'sig': 3.4E-10}
-    mysim.run(**params)
-    print('Done')
+def run_part_Beads(trap_omega, beta): # Beads
+    Nbids_list = np.arange(2, 101, 2)
+    params = {'omega': trap_omega}
+    dt = 0.1E-15
+    
+    for Nbids in Nbids_list:
+        Initial_pos_A = np.random.uniform(-1, 1, size=(Nbids, 1)) * 1E-10
+        Initial_mom_A = np.zeros((Nbids, 1))
+
+        xyz_file = "results\A beta = {:.1e} bids = {:}".format(beta, Nbids) + '.xyz'
+        energy_file = "results\A beta = {:.1e} bids = {:}".format(beta, Nbids) + '.erg'
+        mysim = Simulation( dt=dt, ftype="Harm",  xyzname = xyz_file, seed = 134892987, \
+                           outname= energy_file ,R = Initial_pos_A, p = Initial_mom_A,\
+                              Nsteps=10000,printfreq=10, K = 0, mass = 6.6335209E-26, kind = ['Ar'] * Nbids, beta=beta)
+        mysim.run(**params)
+
+'''
+Part C - Temperature
+'''
+def run_part_A(n):
+    beta = n / (hbar * trap_omega)
+    Nbids = 10 * n
+    params = {'omega': trap_omega}
+    dt = 0.1E-15
+    
+    Initial_pos_A = np.random.uniform(-1, 1, size=(Nbids, 1)) * 1E-10
+    Initial_mom_A = np.zeros((Nbids, 1))
+
+    seed_list = [134892987, 134892988, 134892989]
+
+    for j, seed in enumerate(seed_list):
+        xyz_file = "results\A beta = {:.1e} bids = {:} run = {j}".format(beta, Nbids) + '.xyz'
+        energy_file = "results\A beta = {:.1e} bids = {:} run = {j}".format(beta, Nbids) + '.erg'
+        mysim = Simulation( dt=dt, ftype="Harm",  xyzname = xyz_file, seed= seed, \
+                           outname= energy_file ,R = Initial_pos_A, p = Initial_mom_A,\
+                              Nsteps=10000,printfreq=1, K = 0, mass = 6.6335209E-26, kind = ['Ar'] * Nbids, beta=beta)
+        mysim.run(**params)
 
 ## change
 
@@ -65,4 +86,6 @@ if __name__ == "__main__":
     trap_omega = 50 * 1.602176634E-22 / hbar # from meV to J
 
     run_part_A(trap_omega, Nbids = 10)
+
+    # run_part_Beads(trap_omega, beta = 6 / (hbar * trap_omega))
     print('Done')
