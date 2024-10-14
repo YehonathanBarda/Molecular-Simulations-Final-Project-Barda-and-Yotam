@@ -54,7 +54,7 @@ class Simulation:
     def __init__( self, dt, L = 11.3E-10, Nsteps=0, R=None, mass=None, kind=None, \
                  p=None, F=None, U=None, K=None, seed=937142, ftype=None, \
                  step=0, printfreq=1000, xyzname="sim.xyz", fac=1.0, \
-                 outname="sim.log", debug=False, PBC=False, drmax = None, beta = 273.15 ):
+                 outname="sim.log", debug=False, PBC=False, drmax = None, beta = None):
         """
         THIS IS THE CONSTRUCTOR. SEE DETAILED DESCRIPTION OF DATA MEMBERS
         BELOW. THE DESCRIPTION OF EACH METHOD IS GIVEN IN ITS DOCSTRING.
@@ -489,12 +489,11 @@ class Simulation:
 
         Returns
         -------
-        None. Set s the value of self.K.
+        None. Sets the value of self.K.
 
         """
-        self.K = 1/(2*self.beta) + 1/(2*self.beta) + 0.5 * np.mean(-self.F * (self.R - np.mean(self.R, axis = 0)))
-
-
+        self.K = 1/(2*self.beta) + 0.5 * np.mean(-self.F * (self.R - np.mean(self.R, axis = 0)))
+        # self.K = self.Natoms / (2*self.beta) - (self.omega_p**2 * self.mass / (2)) * np.sum((np.roll(self.R,-1) - self.R)**2)
 
 
     def CalcCjk(self):
@@ -509,13 +508,13 @@ class Simulation:
         for j in range(self.Natoms):
             for k in range(self.Natoms):
                 if k == 0:
-                    C[j, k] = np.sqrt(1 / np.float(self.Natoms))
+                    C[j, k] = np.sqrt(1 / np.float64(self.Natoms))
                 elif 1 <= k and k <= self.Natoms / 2 - 1:
-                    C[j, k] = np.sqrt(2 / np.float(self.Natoms)) * np.cos(2 * np.pi * (j+1) * k / np.float(self.Natoms))
+                    C[j, k] = np.sqrt(2 / np.float64(self.Natoms)) * np.cos(2 * np.pi * (j+1) * k / np.float64(self.Natoms))
                 elif k == self.Natoms / 2:
-                    C[j, k] = np.sqrt(1 / np.float(self.Natoms)) * (-1) ** (j+1)
+                    C[j, k] = np.sqrt(1 / np.float64(self.Natoms)) * (-1) ** (j+1)
                 elif self.Natoms / 2 + 1 <= k and k <= self.Natoms - 1:
-                    C[j, k] = np.sqrt(2 / np.float(self.Natoms)) * np.sin(2 * np.pi * (j+1) * k / np.float(self.Natoms))
+                    C[j, k] = np.sqrt(2 / np.float64(self.Natoms)) * np.sin(2 * np.pi * (j+1) * k / np.float64(self.Natoms))
                 else:
                     raise ValueError('k out of bounds')
         self.Cjk = C
@@ -536,7 +535,7 @@ class Simulation:
         Rtild = np.dot(self.Cjk, self.R)
         ptild = np.dot(self.Cjk, self.p)
 
-        ptild = np.exp(- gamma * self.dt / 2) * ptild + np.sqrt( (self.mass * self.Natoms / self.beta) * (1 - np.exp(- gamma * self.dt))) * np.random.randn(self.Natoms, 1) # Langevin part
+        ptild = np.exp(- gamma * self.dt / 2) * ptild + np.sqrt( (self.mass / self.beta) * (1 - np.exp(- gamma * self.dt))) * np.random.randn(self.Natoms, 1) # Langevin part
 
         self.R = np.dot(self.Ckj, Rtild)
         self.p = np.dot(self.Ckj, ptild)
@@ -567,7 +566,7 @@ class Simulation:
         Rtild = np.dot(self.Cjk, self.R)
         ptild = np.dot(self.Cjk, self.p)
 
-        ptild = np.exp(- gamma * self.dt / 2) * ptild + np.sqrt( (self.mass * self.Natoms / self.beta) * (1 - np.exp(- gamma * self.dt))) * np.random.randn(self.Natoms, 1) # Langevin part
+        ptild = np.exp(- gamma * self.dt / 2) * ptild + np.sqrt( (self.mass / self.beta) * (1 - np.exp(- gamma * self.dt))) * np.random.randn(self.Natoms, 1) # Langevin part
 
         self.R = np.dot(self.Ckj, Rtild)
         self.p = np.dot(self.Ckj, ptild)     
