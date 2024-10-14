@@ -200,11 +200,13 @@ class Simulation:
         self.Ckj = None
         self.omega_p = self.Natoms / (self.beta * hbar)
         self.omega_k = 2 * self.omega_p * np.sin(np.pi * np.arange(0, self.Natoms) / self.Natoms)
-        self.omega_k[0] = 1
-
+        self.omega_k[0] = 1 
+        c = ((1 / (self.mass * self.omega_k)) * np.sin(self.omega_k * self.dt))[:, np.newaxis]
+        c[0] = self.dt / self.mass
+        
         self.dict = {'cos':np.cos(self.omega_k * self.dt)[:, np.newaxis],\
                 '-sin':- (self.mass * self.omega_k * np.sin(self.omega_k * self.dt))[:, np.newaxis],\
-                    '1/sin':((1 / self.mass * self.omega_k) * np.sin(self.omega_k * self.dt))[:, np.newaxis]}
+                    '1/sin': c}
         
     
     
@@ -528,10 +530,16 @@ class Simulation:
         -------
         None. Sets self.R, self.p.
         """
-        gamma = 2 * self.omega_k
+        gamma = 2 * np.reshape( self.omega_k, [self.Natoms, 1])
         gamma[0] = 1/(100 * self.dt)
 
-        self.p = np.exp(- gamma * self.dt / 2) * self.p + np.sqrt( (self.mass / self.beta) * (1 - np.exp(- gamma * self.dt))) * np.random.randn() # Langevin part
+        Rtild = np.dot(self.Cjk, self.R)
+        ptild = np.dot(self.Cjk, self.p)
+
+        ptild = np.exp(- gamma * self.dt / 2) * ptild + np.sqrt( (self.mass * self.Natoms / self.beta) * (1 - np.exp(- gamma * self.dt))) * np.random.randn(self.Natoms, 1) # Langevin part
+
+        self.R = np.dot(self.Ckj, Rtild)
+        self.p = np.dot(self.Ckj, ptild)
 
         self.p += self.F * self.dt / 2
 
@@ -545,9 +553,10 @@ class Simulation:
         # Rtild = cos_omegak_dt[:, np.newaxis] * Rtild - mass_omegak[:, np.newaxis] * sin_omegak_dt[:, np.newaxis] * ptild
         # ptild = (1 / mass_omegak)[:, np.newaxis] * sin_omegak_dt[:, np.newaxis] * Rtild + cos_omegak_dt[:, np.newaxis] * ptild
 
-        ptild = self.dict['cos'] * ptild + self.dict['-sin'] * Rtild
+        ptild_New = self.dict['cos'] * ptild + self.dict['-sin'] * Rtild
         Rtild = self.dict['1/sin'] * ptild + self.dict['cos'] * Rtild
-
+        ptild = ptild_New
+        
         self.R = np.dot(self.Ckj, Rtild)
         self.p = np.dot(self.Ckj, ptild)
 
@@ -555,8 +564,14 @@ class Simulation:
 
         self.p += self.F * self.dt / 2
 
-        self.p = np.exp(- gamma * self.dt / 2) * self.p + np.sqrt( (self.mass / self.beta) * (1 - np.exp(- gamma * self.dt))) * np.random.randn() # Langevin part
-        
+        Rtild = np.dot(self.Cjk, self.R)
+        ptild = np.dot(self.Cjk, self.p)
+
+        ptild = np.exp(- gamma * self.dt / 2) * ptild + np.sqrt( (self.mass * self.Natoms / self.beta) * (1 - np.exp(- gamma * self.dt))) * np.random.randn(self.Natoms, 1) # Langevin part
+
+        self.R = np.dot(self.Ckj, Rtild)
+        self.p = np.dot(self.Ckj, ptild)     
+
         # print(f'step: {self.step}\nR:\n{self.R}')
 
 

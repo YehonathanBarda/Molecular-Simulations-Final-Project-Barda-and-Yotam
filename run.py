@@ -21,11 +21,15 @@ PART A:
 
 def run_part_A(trap_omega, Nbids = 4):
     beta_list = np.array([1]) / (hbar * trap_omega)
+    
     Initial_pos_A = np.random.uniform(-5, 5, size=(Nbids, 1)) * 1E-10
     Initial_mom_A = np.random.normal(0, 1, size=(Nbids, 1)) * 1E-24
     # Initial_pos_A = np.array([[-1], [0], [1]]) * 1E-1
-    # Initial_mom_A = np.array([[-1], [0], [1]]) * 1E-24
-    params = {'omega': trap_omega, 'gamma': 0.1}
+    # Initial_mom_A = np.array([[0], [0], [0], [0]])
+    # print(Initial_pos_A)
+    # print(Initial_mom_A)
+
+    params = {'omega': trap_omega}
     dt = 0.1E-15
     
     for beta in beta_list:
@@ -61,3 +65,4 @@ if __name__ == "__main__":
     trap_omega = 50 * 1.602176634E-22 / hbar # from meV to J
 
     run_part_A(trap_omega, Nbids = 4)
+    print('Done')
