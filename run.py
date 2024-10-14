@@ -6,7 +6,7 @@ Created on Wed Oct  2 12:29:48 2024
 @author: Yehonathan Barda
 """
 
-#imports
+#imports 
 import numpy as np
 import pandas as pd
 from sim import Simulation
