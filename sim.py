@@ -520,7 +520,7 @@ class Simulation:
         self.Ckj = np.transpose(C)
    
 
-    def PolyRingStep(self, gamma, **kwargs):
+    def PolyRingStep(self, **kwargs):
         """
         THIS FUNCTION PERFORMS ONE STEP FOR A RING POLYMER.
 
@@ -528,7 +528,9 @@ class Simulation:
         -------
         None. Sets self.R, self.p.
         """
-        
+        gamma = 2 * self.omega_k
+        gamma[0] = 1/(100 * self.dt)
+
         self.p = np.exp(- gamma * self.dt / 2) * self.p + np.sqrt( (self.mass / self.beta) * (1 - np.exp(- gamma * self.dt))) * np.random.randn() # Langevin part
 
         self.p += self.F * self.dt / 2
