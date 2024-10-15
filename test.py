@@ -1,59 +1,93 @@
+# !/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Oct  2 12:29:48 2024
+
+@author: Yehonathan Barda
+"""
+
+#imports 
 import numpy as np
+from sim import Simulation
 from scipy.constants import hbar
-Natoms = 4
-
-# R = np.array([[1,0,0],[2,0,0],[3,0,0],[4,0,0],[5,0,0]])
-# print(R)
-# print('\n_____________________________________\n')
-# avg = np.mean(R, axis=0)
-# print(avg)
 
 
-# a = np.arange(5)
-# print(a)
-# print('\n_____________________________________\n')
-# a2 = a[:, np.newaxis]
-# print(a2)
-# print('\n_____________________________________\n')
-# print(a2 * R)
-# C = np.zeros((Natoms, Natoms))
-# for j in range(Natoms):
-#     for k in range(Natoms):
-#         if k == 0:
-#             C[j, k] = np.sqrt(1 / np.float(Natoms))
-#         if 1 <= k and k <= Natoms / 2 - 1:
-#             C[j, k] = np.sqrt(2 / np.float(Natoms)) * np.cos(2 * np.pi * (j+1) * k / np.float(Natoms))
-#         if k == Natoms / 2:
-#             C[j, k] = np.sqrt(1 / np.float(Natoms)) * (-1) ** (j+1)
-#         if Natoms / 2 + 1 <= k and k <= Natoms - 1:
-#             C[j, k] = np.sqrt(2 / np.float(Natoms)) * np.sin(2 * np.pi * (j+1) * k / np.float(Natoms))
 
-# print(C)
-# print('\n_____________________________________\n')
+'''
+PART A: 
+'''
 
-# p = np.array([[1],[2],[3],[4]])
-# print(p)
-# print('\n_____________________________________\n')
 
-# print(np.dot(C, p))
+def run_part_A(trap_omega, Nbids):
+    beta_list = np.array([6]) / (hbar * trap_omega)
+    params = {'omega': trap_omega}
+    dt = 0.1E-15
+    
+    Initial_pos =  np.zeros((Nbids, 1))
 
-# x = np.array([1,2,3,4])
-# print(x)
-# print(np.reshape(x, (4,1)))
-# print(x * p)
-dt = 0.1E-15
-trap_omega = 50 * 1.602176634E-22 / hbar
-beta = 1 / (hbar * trap_omega)
-mass = 6.6335209E-26
 
-omega_p = Natoms / (beta * hbar)
-omega_k = 2 * omega_p * np.sin(np.pi * np.arange(0, Natoms) / Natoms)
+    for beta in beta_list:
+        xyz_file = "results2\A beta = {:.1e} bids = {:}".format(beta, Nbids) + '.xyz'
+        energy_file = "results2\A beta = {:.1e} bids = {:}".format(beta, Nbids) + '.erg'
+        mysim = Simulation( dt=dt, ftype="Harm",  xyzname = xyz_file, \
+                           outname= energy_file ,R = Initial_pos,\
+                              Nsteps=10000,printfreq=1, K = 0, mass = 6.6335209E-26, kind = ['Ar'] * Nbids, beta=beta)
+        mysim.sampleMB(beta, removeCM = True)
+        mysim.run(**params)
 
-c = ((1 / (mass * omega_k)) * np.sin(omega_k * dt))[:, np.newaxis]
-c[0] = dt / mass
-        
-dict = {'cos':np.cos(omega_k * dt)[:, np.newaxis],\
-    '-sin':- (mass * omega_k * np.sin(omega_k * dt))[:, np.newaxis],\
-         '1/sin': c}
 
-print(dict['1/sin'])
+'''
+PART B - Beads
+'''
+
+def run_part_Beads(trap_omega, beta): # Beads
+    Nbids_list = np.arange(2, 101, 4)
+    params = {'omega': trap_omega}
+    dt = 0.1E-15
+    
+    for Nbids in Nbids_list:
+        Initial_pos = np.zeros((Nbids, 1))
+
+        xyz_file = "results2\A beta = {:.1e} bids = {:}".format(beta, Nbids) + '.xyz'
+        energy_file = "results2\A beta = {:.1e} bids = {:}".format(beta, Nbids) + '.erg'
+        mysim = Simulation( dt=dt, ftype="Harm",  xyzname = xyz_file, seed = 134892987, \
+                           outname= energy_file ,R = Initial_pos, \
+                              Nsteps=10000,printfreq=10, K = 0, mass = 6.6335209E-26, kind = ['Ar'] * Nbids, beta=beta)
+        mysim.sampleMB(beta, removeCM = False)
+        mysim.run(**params)
+        print('Done: number of beads=' + str(Nbids))
+
+'''
+Part C - Temperature
+'''
+def run_part_C(n):
+    N6 = 70 # Number of beads for n = 6
+    beta = n / (hbar * trap_omega)
+    Nbids = int(np.round(N6 * 6 / n / 2) * 2) # Number of beads for n, rounded to the nearest even number
+    params = {'omega': trap_omega}
+    dt = 0.1E-15
+    
+    Initial_pos = np.zeros((Nbids, 1))
+
+    seed_list = [134892987, 134892988, 134892989]
+
+    for j, seed in enumerate(seed_list):
+        xyz_file = "results2\A beta = {:.1e} bids = {:} run = {:}".format(beta, Nbids, j) + '.xyz'
+        energy_file = "results2\A beta = {:.1e} bids = {:} run = {:}".format(beta, Nbids,j) + '.erg'
+        mysim = Simulation( dt=dt, ftype="Harm",  xyzname = xyz_file, seed= seed, \
+                           outname= energy_file ,R = Initial_pos, \
+                              Nsteps=10000,printfreq=10, K = 0, mass = 6.6335209E-26, kind = ['Ar'] * Nbids, beta=beta)
+        mysim.sampleMB(beta, removeCM = True)
+        mysim.run(**params)
+
+
+if __name__ == "__main__":
+    # Constants
+    trap_omega = 50 * 1.602176634E-22 / hbar # from meV to J
+
+    # for n in range(1,4):
+    #     run_part_C(n)
+    #     print('Done: ' + str(n))
+
+    run_part_Beads(trap_omega, beta = 6 / (hbar * trap_omega))
+    print('Done')
