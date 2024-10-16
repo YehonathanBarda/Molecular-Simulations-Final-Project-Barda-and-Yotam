@@ -46,7 +46,6 @@ SEE MORE INSTRUCTIONS THERE.
 import numpy as np
 import pandas as pd
 from scipy.constants import Boltzmann as BOLTZMANN
-import matplotlib.pyplot as plt
 from scipy.constants import hbar
 
 class Simulation:
@@ -198,8 +197,8 @@ class Simulation:
         #Constant for 1-D ring polymer Path integral simulation:
         self.Cjk = None
         self.Ckj = None
-        self.omega_p = self.Natoms / (self.beta * hbar)
-        self.omega_k = 2 * self.omega_p * np.sin(np.pi * np.arange(0, self.Natoms) / self.Natoms)
+        self.omega_p = self.Natoms / (self.beta * hbar) # eq 6
+        self.omega_k = 2 * self.omega_p * np.sin(np.pi * np.arange(0, self.Natoms) / self.Natoms) # eq 20
         self.omega_k[0] = 1 
         c = ((1 / (self.mass * self.omega_k)) * np.sin(self.omega_k * self.dt))[:, np.newaxis]
         c[0] = self.dt / self.mass
@@ -352,7 +351,7 @@ class Simulation:
 ################################################################
     
     
-    def sampleMB( self, beta, removeCM=True ):
+    def sampleMB( self, removeCM=True ):
         """
         THIS FUNCTIONS SAMPLES INITIAL MOMENTA FROM THE MB DISTRIBUTION.
         IT ALSO REMOVES THE COM MOMENTA, IF REQUESTED.
@@ -527,22 +526,24 @@ class Simulation:
         Returns
         -------
         None. Sets self.R, self.p.
-        """
-        gamma = 2 * np.reshape( self.omega_k, [self.Natoms, 1])
-        gamma[0] = 1/(100 * self.dt)
+        """ 
+        gamma = 2 * np.reshape( self.omega_k, [self.Natoms, 1]) # eq 36
+        gamma[0] = 1/(100 * self.dt) # Baraks mail
 
-        Rtild = np.dot(self.Cjk, self.R)
-        ptild = np.dot(self.Cjk, self.p)
+        ptild = np.dot(self.Cjk, self.p) # 27
 
-        ptild = np.exp(- gamma * self.dt / 2) * ptild + np.sqrt( (self.mass / self.beta) * (1 - np.exp(- gamma * self.dt))) * np.random.randn(self.Natoms, 1) # Langevin part
+        ptild = np.exp(- gamma * self.dt / 2) * ptild + np.sqrt( (self.mass / self.beta) * (1 - np.exp(- gamma * self.dt))) * np.random.randn(self.Natoms, 1) # 28 Langevin part
 
-        self.R = np.dot(self.Ckj, Rtild)
-        self.p = np.dot(self.Ckj, ptild)
+        self.p = np.dot(self.Ckj, ptild) #29
 
-        self.p += self.F * self.dt / 2
+        # self.p = np.exp(- gamma * self.dt / 2) * ptild + np.sqrt( (self.mass / self.beta) * (1 - np.exp(- gamma * self.dt))) * np.random.randn(self.Natoms, 1) # 28 Langevin part
 
-        Rtild = np.dot(self.Cjk, self.R)
-        ptild = np.dot(self.Cjk, self.p)
+        self.evalForce(**kwargs)
+
+        self.p += self.F * self.dt / 2 # 21
+
+        Rtild = np.dot(self.Cjk, self.R) # 22
+        ptild = np.dot(self.Cjk, self.p) # 22
 
         # cos_omegak_dt = np.cos(self.omega_k * self.dt)
         # sin_omegak_dt = np.sin(self.omega_k * self.dt)
@@ -551,24 +552,24 @@ class Simulation:
         # Rtild = cos_omegak_dt[:, np.newaxis] * Rtild - mass_omegak[:, np.newaxis] * sin_omegak_dt[:, np.newaxis] * ptild
         # ptild = (1 / mass_omegak)[:, np.newaxis] * sin_omegak_dt[:, np.newaxis] * Rtild + cos_omegak_dt[:, np.newaxis] * ptild
 
-        ptild_New = self.dict['cos'] * ptild + self.dict['-sin'] * Rtild
-        Rtild = self.dict['1/sin'] * ptild + self.dict['cos'] * Rtild
-        ptild = ptild_New
+        ptild_New = self.dict['cos'] * ptild + self.dict['-sin'] * Rtild # 23
+        Rtild = self.dict['1/sin'] * ptild + self.dict['cos'] * Rtild # 23
+        ptild = ptild_New # 23
         
-        self.R = np.dot(self.Ckj, Rtild)
-        self.p = np.dot(self.Ckj, ptild)
+        self.R = np.dot(self.Ckj, Rtild) # 24
+        self.p = np.dot(self.Ckj, ptild) # 24
 
         self.evalForce(**kwargs)
 
-        self.p += self.F * self.dt / 2
+        self.p += self.F * self.dt / 2 # 25
 
-        Rtild = np.dot(self.Cjk, self.R)
-        ptild = np.dot(self.Cjk, self.p)
+        ptild = np.dot(self.Cjk, self.p) # 27
 
-        ptild = np.exp(- gamma * self.dt / 2) * ptild + np.sqrt( (self.mass / self.beta) * (1 - np.exp(- gamma * self.dt))) * np.random.randn(self.Natoms, 1) # Langevin part
+        ptild = np.exp(- gamma * self.dt / 2) * ptild + np.sqrt( (self.mass / self.beta) * (1 - np.exp(- gamma * self.dt))) * np.random.randn(self.Natoms, 1) # 28 Langevin part
 
-        self.R = np.dot(self.Ckj, Rtild)
-        self.p = np.dot(self.Ckj, ptild)     
+        self.p = np.dot(self.Ckj, ptild) # 29
+
+        # self.p = np.exp(- gamma * self.dt / 2) * self.p + np.sqrt( (self.mass / self.beta) * (1 - np.exp(- gamma * self.dt))) * np.random.randn(self.Natoms, 1) # 28 Langevin part
 
         # print(f'step: {self.step}\nR:\n{self.R}')
 

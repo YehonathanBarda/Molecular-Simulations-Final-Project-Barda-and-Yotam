@@ -21,17 +21,17 @@ PART A:
 def run_part_A(trap_omega,n, Nbids):
     beta = n / (hbar * trap_omega)
     params = {'omega': trap_omega}
-    dt = 0.1E-15
+    dt = 0.1E-14
     
-    Initial_pos =  np.zeros((Nbids, 1))
+    Initial_pos =  np.zeros((Nbids, 1)) # np.random.normal(0, 1E-10, size=(Nbids, 1))
 
 
-    xyz_file = "A beta = {:.1e} bids = {:}".format(beta, Nbids) + '.xyz'
-    energy_file = "A beta = {:.1e} bids = {:}".format(beta, Nbids) + '.erg'
+    xyz_file = "results3\A beta = {:.1e} bids = {:}".format(beta, Nbids) + '.xyz'
+    energy_file = "results3\A beta = {:.1e} bids = {:}".format(beta, Nbids) + '.erg'
     mysim = Simulation( dt=dt, ftype="Harm",  xyzname = xyz_file, \
                        outname= energy_file ,R = Initial_pos,\
                           Nsteps=10000,printfreq=10, K = 0, mass = 6.6335209E-26, kind = ['Ar'] * Nbids, beta=beta)
-    mysim.sampleMB(beta, removeCM = False)
+    mysim.sampleMB(removeCM = False)
     mysim.run(**params)
 
 
@@ -47,8 +47,8 @@ def run_part_Beads(trap_omega, beta): # Beads
     for Nbids in Nbids_list:
         Initial_pos = np.zeros((Nbids, 1))
 
-        xyz_file = "results2\A beta = {:.1e} bids = {:}".format(beta, Nbids) + '.xyz'
-        energy_file = "results2\A beta = {:.1e} bids = {:}".format(beta, Nbids) + '.erg'
+        xyz_file = "results3\A beta = {:.1e} bids = {:}".format(beta, Nbids) + '.xyz'
+        energy_file = "results3\A beta = {:.1e} bids = {:}".format(beta, Nbids) + '.erg'
         mysim = Simulation( dt=dt, ftype="Harm",  xyzname = xyz_file, seed = 134892987, \
                            outname= energy_file ,R = Initial_pos, \
                               Nsteps=10000,printfreq=10, K = 0, mass = 6.6335209E-26, kind = ['Ar'] * Nbids, beta=beta)
@@ -71,8 +71,8 @@ def run_part_C(n):
     seed_list = [24684873, 34536297, 134892989]
 
     for j, seed in enumerate(seed_list):
-        xyz_file = "results2\A beta = {:.1e} bids = {:} run = {:}".format(beta, Nbids, j) + '.xyz'
-        energy_file = "results2\A beta = {:.1e} bids = {:} run = {:}".format(beta, Nbids,j) + '.erg'
+        xyz_file = "results3\A beta = {:.1e} bids = {:} run = {:}".format(beta, Nbids, j) + '.xyz'
+        energy_file = "results3\A beta = {:.1e} bids = {:} run = {:}".format(beta, Nbids,j) + '.erg'
         mysim = Simulation( dt=dt, ftype="Harm",  xyzname = xyz_file, seed= seed, \
                            outname= energy_file ,R = Initial_pos, \
                               Nsteps=10000,printfreq=10, K = 0, mass = 6.6335209E-26, kind = ['Ar'] * Nbids, beta=beta)
