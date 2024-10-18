@@ -490,6 +490,7 @@ class Simulation:
 
         """
         self.K = 1/(2 * self.beta) + 0.5 * np.mean(-self.F * (self.R - np.mean(self.R, axis = 0))) # from notes
+        
         # self.K = self.Natoms / (2*self.beta) - (self.mass * self.Natoms) / (2 * self.beta ** 2 * hbar ** 2) * np.sum((np.roll(self.R,-1) - self.R)**2) # from takerman 1
         # self.K = -1 / 2 * np.mean(self.R * self.F) # from takerman 2 (viral estimator)
 
@@ -532,7 +533,7 @@ class Simulation:
 
         ptild = np.dot(self.Cjk, self.p) # 27
 
-        ptild = np.exp(- gamma * self.dt / 2) * ptild + np.sqrt( (self.mass / self.beta) * (1 - np.exp(- gamma * self.dt))) * np.random.randn(self.Natoms, 1) # 28 Langevin part
+        ptild = np.exp(- gamma * self.dt / 2) * ptild + np.sqrt( (self.mass / self.beta) * (1 - np.exp(- gamma * self.dt))) * np.random.normal(0, 1, size = (self.Natoms, 1)) # 28 Langevin part
 
         self.p = np.dot(self.Ckj, ptild) #29
 
@@ -565,7 +566,7 @@ class Simulation:
 
         ptild = np.dot(self.Cjk, self.p) # 27
 
-        ptild = np.exp(- gamma * self.dt / 2) * ptild + np.sqrt( (self.mass / self.beta) * (1 - np.exp(- gamma * self.dt))) * np.random.randn(self.Natoms, 1) # 28 Langevin part
+        ptild = np.exp(- gamma * self.dt / 2) * ptild + np.sqrt( (self.mass / self.beta) * (1 - np.exp(- gamma * self.dt))) * np.random.normal(0, 1, size = (self.Natoms, 1)) # 28 Langevin part
 
         self.p = np.dot(self.Ckj, ptild) # 29
 

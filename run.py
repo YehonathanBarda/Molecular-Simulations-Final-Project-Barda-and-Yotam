@@ -21,7 +21,7 @@ PART A:
 def run_part_A(trap_omega,n, Nbids):
     beta = n / (hbar * trap_omega)
     params = {'omega': trap_omega}
-    dt = 0.1E-14
+    dt = 0.1E-15
     
     Initial_pos =  np.zeros((Nbids, 1)) # np.random.normal(0, 1E-10, size=(Nbids, 1))
 
