@@ -46,7 +46,6 @@ SEE MORE INSTRUCTIONS THERE.
 import numpy as np
 import pandas as pd
 from scipy.constants import Boltzmann as BOLTZMANN
-import matplotlib.pyplot as plt
 from scipy.constants import hbar
 
 class Simulation:
@@ -198,16 +197,27 @@ class Simulation:
         #Constant for 1-D ring polymer Path integral simulation:
         self.Cjk = None
         self.Ckj = None
-        self.omega_p = self.Natoms / (self.beta * hbar)
-        self.omega_k = 2 * self.omega_p * np.sin(np.pi * np.arange(0, self.Natoms) / self.Natoms)
-        self.omega_k[0] = 1 
-        c = ((1 / (self.mass * self.omega_k)) * np.sin(self.omega_k * self.dt))[:, np.newaxis]
+
+        # self.omega_p = self.Natoms / (self.beta * hbar) # eq 6
+        # self.omega_k = 2 * self.omega_p * np.sin(np.pi * np.arange(0, self.Natoms) / self.Natoms) # eq 20
+        # self.omega_k[0] = 1 
+        # c = ((1 / (self.mass * self.omega_k)) * np.sin(self.omega_k * self.dt))[:, np.newaxis]
+        # c[0] = self.dt / self.mass
+        
+        # self.dict = {'cos':np.cos(self.omega_k * self.dt)[:, np.newaxis],\
+        #         '-sin':- (self.mass * self.omega_k * np.sin(self.omega_k * self.dt))[:, np.newaxis],\
+        #             '1/sin': c}
+        
+        
+        self.omega_p = self.Natoms / (self.beta * hbar) # eq 6
+        self.omega_k = np.reshape(2 * self.omega_p * np.sin(np.pi * np.arange(0, self.Natoms) / self.Natoms),(self.Natoms,1)) # eq 20
+        c = np.zeros((self.Natoms, 1))
         c[0] = self.dt / self.mass
-        
-        self.dict = {'cos':np.cos(self.omega_k * self.dt)[:, np.newaxis],\
-                '-sin':- (self.mass * self.omega_k * np.sin(self.omega_k * self.dt))[:, np.newaxis],\
-                    '1/sin': c}
-        
+        c[1:] = ((1 / (self.mass * self.omega_k[1:])) * np.sin(self.omega_k[1:]* self.dt))
+
+        self.dict = {'cos':np.cos(self.omega_k * self.dt),\
+            '-sin':-self.mass * self.omega_k * np.sin(self.omega_k * self.dt),\
+                '1/sin': c}
     
     
     def __del__( self ):
@@ -352,7 +362,7 @@ class Simulation:
 ################################################################
     
     
-    def sampleMB( self, temp, removeCM=True ):
+    def sampleMB( self, removeCM=True ):
         """
         THIS FUNCTIONS SAMPLES INITIAL MOMENTA FROM THE MB DISTRIBUTION.
         IT ALSO REMOVES THE COM MOMENTA, IF REQUESTED.
@@ -402,15 +412,14 @@ class Simulation:
         True
 
         """
-        std = np.sqrt(self.mass * BOLTZMANN * temp)
-        self.p = np.random.normal(0,std, (self.Natoms, 3))
-        x = np.random.normal()
+        std = np.sqrt(self.mass / self.beta)
+        self.p = np.random.normal(0,std, (self.Natoms, 1))
         if removeCM:
             self.p = self.p - np.mean(self.p, axis=0)
 
 
                                 
-    def evalHarm( self, omega , gamma =0):
+    def evalHarm( self, omega):
         """
         THIS FUNCTION EVALUATES THE POTENTIAL AND FORCE FOR A HARMONIC TRAP.
 
@@ -479,9 +488,8 @@ class Simulation:
         >>> abs(mysim.K - 8.96294271e+26) < 4E17
         True
         """
-        self.K = np.sum(np.sum( self.p**2, axis = 1) / (2 * self.mass[0,0]))
+        self.K = np.sum(np.sum( self.p**2, axis = 1) / (2 * self.mass[0,0])) 
         # self.K = np.sum(np.linalg.norm(self.p, axis = 1) ** 2 / (2 * self.mass))
-
 
     def CalcKinE_PI( self ):
         """
@@ -492,8 +500,10 @@ class Simulation:
         None. Sets the value of self.K.
 
         """
-        self.K = 1/(2*self.beta) + 0.5 * np.mean(-self.F * (self.R - np.mean(self.R, axis = 0)))
-        # self.K = self.Natoms / (2*self.beta) - (self.omega_p**2 * self.mass / (2)) * np.sum((np.roll(self.R,-1) - self.R)**2)
+        self.K = 1/(2 * self.beta) + 0.5 * np.mean(-self.F * (self.R - np.mean(self.R, axis = 0))) # from notes
+        
+        # self.K = self.Natoms / (2*self.beta) - (self.mass * self.Natoms) / (2 * self.beta ** 2 * hbar ** 2) * np.sum((np.roll(self.R,-1) - self.R)**2) # from takerman 1
+        # self.K = -1 / 2 * np.mean(self.R * self.F) # from takerman 2 (viral estimator)
 
 
     def CalcCjk(self):
@@ -528,22 +538,25 @@ class Simulation:
         Returns
         -------
         None. Sets self.R, self.p.
-        """
-        gamma = 2 * np.reshape( self.omega_k, [self.Natoms, 1])
-        gamma[0] = 1/(100 * self.dt)
+        """ 
+        gamma = 2 * self.omega_k # eq 36
+        # gamma = 2 * 2 * self.omega_p * np.sin(np.pi * np.arange(0, self.Natoms) / self.Natoms) # eq 36
+        gamma[0] = 1/(100 * self.dt) # Baraks mail
+ 
+        ptild = np.dot(self.Cjk, self.p) # 27
 
-        Rtild = np.dot(self.Cjk, self.R)
-        ptild = np.dot(self.Cjk, self.p)
+        ptild = np.exp(- gamma * self.dt / 2) * ptild + np.sqrt( (self.mass * self.Natoms / self.beta) * (1 - np.exp(- gamma * self.dt))) * np.random.normal(0, 1, size = (self.Natoms, 1)) # 28 Langevin part
 
-        ptild = np.exp(- gamma * self.dt / 2) * ptild + np.sqrt( (self.mass / self.beta) * (1 - np.exp(- gamma * self.dt))) * np.random.randn(self.Natoms, 1) # Langevin part
+        self.p = np.dot(self.Ckj, ptild) # 29
 
-        self.R = np.dot(self.Ckj, Rtild)
-        self.p = np.dot(self.Ckj, ptild)
+        # self.p = np.exp(- gamma * self.dt / 2) * ptild + np.sqrt( (self.mass / self.beta) * (1 - np.exp(- gamma * self.dt))) * np.random.randn(self.Natoms, 1) # 28 Langevin part
 
-        self.p += self.F * self.dt / 2
+        self.evalForce(**kwargs)
 
-        Rtild = np.dot(self.Cjk, self.R)
-        ptild = np.dot(self.Cjk, self.p)
+        self.p += self.F * self.dt / 2 # 21
+
+        Rtild = np.dot(self.Cjk, self.R) # 22
+        ptild = np.dot(self.Cjk, self.p) # 22
 
         # cos_omegak_dt = np.cos(self.omega_k * self.dt)
         # sin_omegak_dt = np.sin(self.omega_k * self.dt)
@@ -552,24 +565,24 @@ class Simulation:
         # Rtild = cos_omegak_dt[:, np.newaxis] * Rtild - mass_omegak[:, np.newaxis] * sin_omegak_dt[:, np.newaxis] * ptild
         # ptild = (1 / mass_omegak)[:, np.newaxis] * sin_omegak_dt[:, np.newaxis] * Rtild + cos_omegak_dt[:, np.newaxis] * ptild
 
-        ptild_New = self.dict['cos'] * ptild + self.dict['-sin'] * Rtild
-        Rtild = self.dict['1/sin'] * ptild + self.dict['cos'] * Rtild
-        ptild = ptild_New
+        ptild_New = self.dict['cos'] * ptild + self.dict['-sin'] * Rtild # 23
+        Rtild = self.dict['1/sin'] * ptild + self.dict['cos'] * Rtild # 23
+        ptild = np.copy(ptild_New) # 23
         
-        self.R = np.dot(self.Ckj, Rtild)
-        self.p = np.dot(self.Ckj, ptild)
+        self.R = np.dot(self.Ckj, Rtild) # 24
+        self.p = np.dot(self.Ckj, ptild) # 24
 
         self.evalForce(**kwargs)
 
-        self.p += self.F * self.dt / 2
+        self.p += self.F * self.dt / 2 # 25
 
-        Rtild = np.dot(self.Cjk, self.R)
-        ptild = np.dot(self.Cjk, self.p)
+        ptild = np.dot(self.Cjk, self.p) # 27
 
-        ptild = np.exp(- gamma * self.dt / 2) * ptild + np.sqrt( (self.mass / self.beta) * (1 - np.exp(- gamma * self.dt))) * np.random.randn(self.Natoms, 1) # Langevin part
+        ptild = np.exp(- gamma * self.dt / 2) * ptild + np.sqrt( (self.mass * self.Natoms / self.beta) * (1 - np.exp(- gamma * self.dt))) * np.random.normal(0, 1, size = (self.Natoms, 1)) # 28 Langevin part
 
-        self.R = np.dot(self.Ckj, Rtild)
-        self.p = np.dot(self.Ckj, ptild)     
+        self.p = np.dot(self.Ckj, ptild) # 29
+
+        # self.p = np.exp(- gamma * self.dt / 2) * self.p + np.sqrt( (self.mass / self.beta) * (1 - np.exp(- gamma * self.dt))) * np.random.randn(self.Natoms, 1) # 28 Langevin part
 
         # print(f'step: {self.step}\nR:\n{self.R}')
 
@@ -682,11 +695,14 @@ class Simulation:
         """      
         
         self.CalcCjk()
-        self.evalForce(**kwargs)
         for step in range(self.Nsteps):
-            self.step = step
+            self.step = step        
+            self.evalForce(**kwargs)
             self.CalcKinE_PI()
-            self.E = self.K + self.U
+            # self.E = self.K + self.U
+            omega2 = 50 * 1.602176634E-22 / hbar
+            self.E = np.mean(self.mass * omega2 ** 2 * self.R **2)
+            # self.E = self.Natoms / (2 * self.beta) - self.mass * self.Natoms / (2 * self.beta ** 2 * hbar ** 2) * np.sum((np.roll(self.R,-1) - self.R) ** 2) + 1/2 *  self.mass * omega2 ** 2 * np.mean(self.R **2)
 
             if self.step % self.printfreq == 0:
                 self.dumpThermo()
