@@ -14,7 +14,7 @@ from scipy.constants import hbar
 
 
 '''
-PART A: 
+PART A:  Run the simulation for a single bead (tests)
 '''
 
 
