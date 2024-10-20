@@ -6,7 +6,7 @@ Created on Wed Oct  2 12:29:48 2024
 @author: Yehonathan Barda
 """
 
-#imports 
+#imports
 import numpy as np
 from sim import Simulation
 from scipy.constants import hbar
