@@ -23,7 +23,7 @@ def run_part_A(trap_omega,n, Nbids):
     params = {'omega': trap_omega}
     dt = 0.1E-15
     
-    Initial_pos =  np.zeros((Nbids, 1)) # np.random.normal(0, 1E-10, size=(Nbids, 1))
+    Initial_pos =  np.zeros((Nbids, 1))
 
 
     xyz_file = "results3\A beta = {:.1e} bids = {:}".format(beta, Nbids) + '.xyz'
@@ -84,10 +84,12 @@ if __name__ == "__main__":
     # Constants
     trap_omega = 50 * 1.602176634E-22 / hbar # from meV to J
 
+    # run_part_A(trap_omega,6, 104)
+
+    run_part_Beads(trap_omega, beta = 6 / (hbar * trap_omega))
+
     for n in range(1,7):
         run_part_C(n)
         print('Done: ' + str(n))
 
-    # run_part_Beads(trap_omega, beta = 6 / (hbar * trap_omega))
-    # run_part_A(trap_omega,6, 104)
     print('Done')
