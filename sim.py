@@ -197,17 +197,6 @@ class Simulation:
         #Constant for 1-D ring polymer Path integral simulation:
         self.Cjk = None
         self.Ckj = None
-
-        # self.omega_p = self.Natoms / (self.beta * hbar) # eq 6
-        # self.omega_k = 2 * self.omega_p * np.sin(np.pi * np.arange(0, self.Natoms) / self.Natoms) # eq 20
-        # self.omega_k[0] = 1 
-        # c = ((1 / (self.mass * self.omega_k)) * np.sin(self.omega_k * self.dt))[:, np.newaxis]
-        # c[0] = self.dt / self.mass
-        
-        # self.dict = {'cos':np.cos(self.omega_k * self.dt)[:, np.newaxis],\
-        #         '-sin':- (self.mass * self.omega_k * np.sin(self.omega_k * self.dt))[:, np.newaxis],\
-        #             '1/sin': c}
-        
         
         self.omega_p = self.Natoms / (self.beta * hbar) # eq 6
         self.omega_k = np.reshape(2 * self.omega_p * np.sin(np.pi * np.arange(0, self.Natoms) / self.Natoms),(self.Natoms,1)) # eq 20
@@ -215,6 +204,7 @@ class Simulation:
         c[0] = self.dt / self.mass
         c[1:] = ((1 / (self.mass * self.omega_k[1:])) * np.sin(self.omega_k[1:]* self.dt))
 
+        # Dictionary for for the matrix in eq 2.36 in notes
         self.dict = {'cos':np.cos(self.omega_k * self.dt),\
             '-sin':-self.mass * self.omega_k * np.sin(self.omega_k * self.dt),\
                 '1/sin': c}
@@ -460,37 +450,6 @@ class Simulation:
         # print(f'step: {self.step}\nforce:\n{self.F}')
 
 
-        
-    def CalcKinE( self ):
-        """
-        THIS FUNCTIONS EVALUATES THE KINETIC ENERGY OF THE SYSTEM.
-
-        Returns
-        -------
-        None. Set s the value of self.K.
-
-        Tests
-        -----
-        CREATE AN OBJECT OF THE SIMULATION CLASS WITH FOLLOWING PARAMS:
-        TIMESTEP 0.1E-15,BOX SIDE LENGTH 11.3E-10, LJ POTENTIAL, 
-        MOMENTUM 1 (ALL DIRECTIONS), KINETIC ENERGY 1,
-        MASS 1.6735575E-27
-        
-        IMPLEMENT THE FOLLOWING TESTS BELOW THE WORD Example:
-        1. CHECK THAT THE VALUE OF THE KINETIC ENERGY IS 8.96294271e+26.
-        
-        Example:
-        >>> mysim = Simulation(dt=0.1E-15, L=11.3E-10, ftype="LJ", mass = np.ones((1,1)) * 1.6735575E-27)
-        >>> mysim.mass = np.ones((1,1)) * 1.6735575E-27
-        >>> mysim.K = 1
-        >>> mysim.p = np.array([[1,1,1]])
-        >>> mysim.CalcKinE()
-        >>> abs(mysim.K - 8.96294271e+26) < 4E17
-        True
-        """
-        self.K = np.sum(np.sum( self.p**2, axis = 1) / (2 * self.mass[0,0])) 
-        # self.K = np.sum(np.linalg.norm(self.p, axis = 1) ** 2 / (2 * self.mass))
-
     def CalcKinE_PI( self ):
         """
         THIS FUNCTIONS EVALUATES THE KINETIC ENERGY OF THE RING POLYMER.
@@ -540,7 +499,6 @@ class Simulation:
         None. Sets self.R, self.p.
         """ 
         gamma = 2 * self.omega_k # eq 36
-        # gamma = 2 * 2 * self.omega_p * np.sin(np.pi * np.arange(0, self.Natoms) / self.Natoms) # eq 36
         gamma[0] = 1/(100 * self.dt) # Baraks mail
  
         ptild = np.dot(self.Cjk, self.p) # 27
@@ -549,21 +507,12 @@ class Simulation:
 
         self.p = np.dot(self.Ckj, ptild) # 29
 
-        # self.p = np.exp(- gamma * self.dt / 2) * ptild + np.sqrt( (self.mass / self.beta) * (1 - np.exp(- gamma * self.dt))) * np.random.randn(self.Natoms, 1) # 28 Langevin part
-
         self.evalForce(**kwargs)
 
         self.p += self.F * self.dt / 2 # 21
 
         Rtild = np.dot(self.Cjk, self.R) # 22
         ptild = np.dot(self.Cjk, self.p) # 22
-
-        # cos_omegak_dt = np.cos(self.omega_k * self.dt)
-        # sin_omegak_dt = np.sin(self.omega_k * self.dt)
-        # mass_omegak = self.mass * self.omega_k
-
-        # Rtild = cos_omegak_dt[:, np.newaxis] * Rtild - mass_omegak[:, np.newaxis] * sin_omegak_dt[:, np.newaxis] * ptild
-        # ptild = (1 / mass_omegak)[:, np.newaxis] * sin_omegak_dt[:, np.newaxis] * Rtild + cos_omegak_dt[:, np.newaxis] * ptild
 
         ptild_New = self.dict['cos'] * ptild + self.dict['-sin'] * Rtild # 23
         Rtild = self.dict['1/sin'] * ptild + self.dict['cos'] * Rtild # 23
@@ -581,97 +530,6 @@ class Simulation:
         ptild = np.exp(- gamma * self.dt / 2) * ptild + np.sqrt( (self.mass * self.Natoms / self.beta) * (1 - np.exp(- gamma * self.dt))) * np.random.normal(0, 1, size = (self.Natoms, 1)) # 28 Langevin part
 
         self.p = np.dot(self.Ckj, ptild) # 29
-
-        # self.p = np.exp(- gamma * self.dt / 2) * self.p + np.sqrt( (self.mass / self.beta) * (1 - np.exp(- gamma * self.dt))) * np.random.randn(self.Natoms, 1) # 28 Langevin part
-
-        # print(f'step: {self.step}\nR:\n{self.R}')
-
-
-
-
-
-  
-    def MCstep( self, **kwargs ):
-        """
-        THIS FUNCTIONS PERFORMS ONE METROPOLIS MC STEP IN THE NVT ENSEMBLE.
-        YOU WILL NEED TO PROPOSE TRANSLATION MOVES, APPLY  
-        PBC, CALCULATE THE CHANGE IN POTENTIAL ENERGY, ACCEPT OR REJECT, 
-        AND CALCULATE THE ACCEPTANCE PROBABILITY. 
-
-        Returns
-        -------
-        None. Sets self.R.
-        """
-        
-        # def evalLJ_atom(R,atom,eps,sig):
-        #     r_ij = R[atom] - np.delete(R,atom, axis=0) # array for energy evaluation 
-        #     if self.PBC:
-        #         r_ij[r_ij > self.L / 2] -= self.L # energy PBC
-        #         r_ij[r_ij < - self.L / 2] += self.L # energy PBC
-        #     norm_ij = np.linalg.norm(r_ij, axis = 1) # enrgy norm
-        #     return 4 * eps * np.sum((sig / norm_ij) ** 12 - (sig / norm_ij) ** 6)
-        
-
-        # previous energy and positions arrays
-        U0 = np.copy(self.U) 
-
-        for atom in range(self.Natoms): # np.random.randint(0,self.Natoms , self.Natoms): # preform MC pass.
-            R0 = np.copy(self.R)
-            # PROPOSE TRANSLATION MOVE
-            R1 = R0[atom] + np.random.uniform(-1,1, (1,3)) * self.drmax
-
-            # apply PBC
-            if self.PBC:
-                R1[R1 > self.L / 2] -= self.L
-                R1[R1 < - self.L / 2] += self.L
-            self.R[atom] = R1
-
-            # eval energy
-            if self.ftype == 'evalLJ':
-                U0 = self.evalLJ_atom(R0, atom, **kwargs)
-                U1 = self.evalLJ_atom(self.R, atom, **kwargs)
-            else: 
-                self.evalForce(**kwargs)
-                U1 = self.U
-            
-            # accept or reject
-            ratio = np.exp(-self.beta * (U1 - U0))
-            xsi = np.random.uniform(0,1)
-
-            if ratio >= xsi: # accept
-                # self.R[atom] = R1
-                self.accept += 1
-            else:  # reject
-                self.R[atom] = R0[atom]
-
-
-
-
-        
-    def runMC(self, **kwargs):
-        """ 
-        THIS FUNCTION DEFINES AN MC SIMULATION DOES, GIVEN AN INSTANCE OF 
-        THE SIMULATION CLASS. YOU WILL NEED TO LOOP OVER MC STEPS, 
-        PRINT THE COORDINATES AND ENERGIES EVERY PRINTFREQ TIME STEPS 
-        TO THEIR RESPECTIVE FILES, SIMILARLY TO YOUR MD CODE.
-
-        Returns
-        -------
-        None.
-
-        """ 
-        for step in range(self.Nsteps):
-            self.step = step
-            self.evalForce(**kwargs)
-            if self.step % self.printfreq == 0:
-                self.dumpThermo()
-                self.dumpXYZ_pandas()
-             
-            self.MCstep(**kwargs)
-        self.accept /=  self.Nsteps * self.Natoms
-        self.evalForce(**kwargs)
-        self.dumpThermo()
-        self.dumpXYZ_pandas()
 
 
         
@@ -699,10 +557,7 @@ class Simulation:
             self.step = step        
             self.evalForce(**kwargs)
             self.CalcKinE_PI()
-            # self.E = self.K + self.U
-            omega2 = 50 * 1.602176634E-22 / hbar
-            self.E = np.mean(self.mass * omega2 ** 2 * self.R **2)
-            # self.E = self.Natoms / (2 * self.beta) - self.mass * self.Natoms / (2 * self.beta ** 2 * hbar ** 2) * np.sum((np.roll(self.R,-1) - self.R) ** 2) + 1/2 *  self.mass * omega2 ** 2 * np.mean(self.R **2)
+            self.E = 2 * self.U # virial estimator for the total energy (Takerman), detiled in the rapport
 
             if self.step % self.printfreq == 0:
                 self.dumpThermo()
