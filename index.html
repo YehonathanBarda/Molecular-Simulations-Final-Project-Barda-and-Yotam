@@ -7481,17 +7481,7 @@ a.anchor-link {
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h1 id="Molecular-Simulations-(0351-4057)-Final-Assignment">Molecular Simulations (0351-4057) Final Assignment<a class="anchor-link" href="#Molecular-Simulations-(0351-4057)-Final-Assignment">¶</a></h1>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p><strong>Yotam Gomeh - 323823971 <br/>
+<h1 id="Molecular-Simulations-(0351-4057)-Final-Assignment">Molecular Simulations (0351-4057) Final Assignment<a class="anchor-link" href="#Molecular-Simulations-(0351-4057)-Final-Assignment">¶</a></h1><p><strong>Yotam Gomeh - 323823971 <br/>
 Yehonathan Barda - 327569174</strong></p>
 <p>The full GitHub repository can be found <a href="https://github.com/YehonathanBarda/Molecular-Simulations-Final-Project-Barda-and-Yotam">here</a>.</p>
 </div>
@@ -7522,9 +7512,9 @@ $$</p>
 $$
 Z = \text{Tr}\left\{e^{-\beta\hat{\mathcal{H}}}\right\} = \lim _{P \to \infty} \left(\frac{mP}{2 \pi \beta \hbar ^2}\right) ^{P/2} \int _{D(L)} dx_1 \ldots dx_P \times \exp \left\{ -\frac{1}{\hbar} \sum_{k=1}^{P} \left[ \frac{mP}{2\beta \hbar} (x_{k+1} - x_k)^2 + \frac{\beta \hbar}{P} V(x_k) \right] \right\} \Bigg|_{x_{P+1} = x_1}
 $$</p>
-<p>where the quantum system (with its Hamiltonian) is mapped onto a classical sytem comprised of $P \to \infty$ "beads" where each pair of beads is connected in a ring via springs with frequency $\omega _P = \frac{P}{\beta \hbar}$ and external potenital $V(x)$</p>
+<p>where the quantum system (with its Hamiltonian) is mapped onto a classical sytem comprised of $P \to \infty$ "beads" where each pair of beads is connected in a ring via springs with frequency $\omega _P = \frac{P}{\beta \hbar}$ and external potential $V(x)$</p>
 <hr/>
-<h3 id="Analyltic-solultion-for-harmonic-oscillator">Analyltic solultion for harmonic oscillator<a class="anchor-link" href="#Analyltic-solultion-for-harmonic-oscillator">¶</a></h3><p>for harmonic external potemtial $V(x) = \frac{1}{2} m \omega_0 ^2 x^2$ the partition function is given by (eq. 3.40 in the PIMC notes):
+<h3 id="Analytic-solultion-for-harmonic-oscillator">Analytic solultion for harmonic oscillator<a class="anchor-link" href="#Analytic-solultion-for-harmonic-oscillator">¶</a></h3><p>for harmonic external potential $V(x) = \frac{1}{2} m \omega_0 ^2 x^2$ the partition function is given by (eq. 3.40 in the PIMC notes):
 $$
 Z (\beta) = \frac{1}{2\sinh(\frac{\hbar\omega_0}{2}\beta)}.
 $$</p>
@@ -7714,9 +7704,9 @@ $$</p>
 <tr style="text-align: right;">
 <th></th>
 <th>βℏω</th>
-<th>E simulation</th>
-<th>std</th>
-<th>E analytic</th>
+<th>E simulation [J]</th>
+<th>std [J]</th>
+<th>E analytic [J]</th>
 <th>Nσ</th>
 </tr>
 </thead>
@@ -7724,50 +7714,50 @@ $$</p>
 <tr>
 <th>0</th>
 <td>1</td>
-<td>8.723248e-21</td>
-<td>3.015456e-22</td>
-<td>8.667589e-21</td>
-<td>0.184580</td>
+<td>8.72e-21</td>
+<td>3.02e-22</td>
+<td>8.67e-21</td>
+<td>0.18</td>
 </tr>
 <tr>
 <th>1</th>
 <td>2</td>
-<td>5.105419e-21</td>
-<td>1.166796e-22</td>
-<td>5.259286e-21</td>
-<td>1.318711</td>
+<td>5.11e-21</td>
+<td>1.17e-22</td>
+<td>5.26e-21</td>
+<td>1.3</td>
 </tr>
 <tr>
 <th>2</th>
 <td>3</td>
-<td>4.186881e-21</td>
-<td>1.005899e-22</td>
-<td>4.425177e-21</td>
-<td>2.368991</td>
+<td>4.19e-21</td>
+<td>1.01e-22</td>
+<td>4.43e-21</td>
+<td>2.4</td>
 </tr>
 <tr>
 <th>3</th>
 <td>4</td>
-<td>4.036647e-21</td>
-<td>7.526519e-23</td>
-<td>4.154904e-21</td>
-<td>1.571194</td>
+<td>4.04e-21</td>
+<td>7.53e-23</td>
+<td>4.15e-21</td>
+<td>1.6</td>
 </tr>
 <tr>
 <th>4</th>
 <td>5</td>
-<td>3.916469e-21</td>
-<td>2.117404e-22</td>
-<td>4.059785e-21</td>
-<td>0.676845</td>
+<td>3.92e-21</td>
+<td>2.12e-22</td>
+<td>4.06e-21</td>
+<td>0.68</td>
 </tr>
 <tr>
 <th>5</th>
 <td>6</td>
-<td>4.067617e-21</td>
-<td>9.036099e-23</td>
-<td>4.025348e-21</td>
-<td>0.467777</td>
+<td>4.07e-21</td>
+<td>9.04e-23</td>
+<td>4.03e-21</td>
+<td>0.47</td>
 </tr>
 </tbody>
 </table>
